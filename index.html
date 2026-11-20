@@ -715,7 +715,7 @@ function renderFrame64(s, f, includeSword = true, useOutline = true) {
   const hx = Math.round(K.rArm.end[0]), hy = Math.round(K.rArm.end[1]);
 
   if (includeSword && f.sword && f.sBehind) blitPart(buf, IMGS.sword, hx, hy, f.sa);
-  const effRBehind = f.rBehind && !((s === 'front' && f.ra1 > 12) || (s === 'back' && f.ra1 < -12));
+  const effRBehind = f.rBehind;
   const farArmR  = Math.max(1.25, ARM_R - 0.35);
   const nearArmR = ARM_R;
   if (effRBehind) draw2BoneArm(buf, K.rArm, true, false, useOutline, farArmR);
