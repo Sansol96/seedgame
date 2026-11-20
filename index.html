@@ -178,10 +178,11 @@
 
   <div class="right">
     <div class="box">
-      <h3>🧍 척추(시어) · 머리 <button class="mini" onclick="setF('lean',0);setF('hx',0);setF('hy',0);syncUI()">기울임 0</button></h3>
+      <h3>🧍 척추(시어·회전) · 머리 <button class="mini" onclick="setF('lean',0);setF('twist',0);setF('hx',0);setF('hy',0);syncUI()">기울임 0</button></h3>
       <div class="row"><label>몸통 X</label><input type="range" id="s_bx" min="-5" max="5" value="0" oninput="setF('bx',+this.value)"><input type="number" class="val-in" id="n_bx" min="-5" max="5" value="0" oninput="setNum('bx',this)"></div>
       <div class="row"><label>몸통 Y</label><input type="range" id="s_by" min="-5" max="4" value="0" oninput="setF('by',+this.value)"><input type="number" class="val-in" id="n_by" min="-5" max="4" value="0" oninput="setNum('by',this)"></div>
       <div class="row"><label>몸통 숙임</label><input type="range" id="s_lean" min="-3" max="3" value="0" oninput="setF('lean',+this.value)"><input type="number" class="val-in" id="n_lean" min="-3" max="3" value="0" oninput="setNum('lean',this)"></div>
+      <div class="row"><label>몸통 회전</label><input type="range" id="s_twist" min="-3" max="3" value="0" oninput="setF('twist',+this.value)"><input type="number" class="val-in" id="n_twist" min="-3" max="3" value="0" oninput="setNum('twist',this)"></div>
       <div class="row"><label>머리 앞/뒤</label><input type="range" id="s_hx" min="-1" max="1" value="0" oninput="setF('hx',+this.value)"><input type="number" class="val-in" id="n_hx" min="-1" max="1" value="0" oninput="setNum('hx',this)"></div>
       <div class="row"><label>머리 끄덕</label><input type="range" id="s_hy" min="0" max="2" value="0" oninput="setF('hy',+this.value)"><input type="number" class="val-in" id="n_hy" min="0" max="2" value="0" oninput="setNum('hy',this)"></div>
       <div class="chk-row"><label><input type="checkbox" id="c_hurt" onchange="setF('hurt',this.checked)"> 피격 표정(&gt; &lt;)</label></div>
@@ -297,7 +298,7 @@ function defaultFrame(s) {
   const g = groundAnkles(curSide);
   const legBend = curSide === 'front' ? -1 : 1;
   return {
-    bx: 0, by: 0, lean: 0, hx: 0, hy: 0, bagx: 0, bagy: 0, hurt: false,
+    bx: 0, by: 0, lean: 0, twist: 0, hx: 0, hy: 0, bagx: 0, bagy: 0, hurt: false,
     // Arms: a1 = upper arm angle (0=down, +clockwise), a2 = elbow bend relative to a1!
     ra1: 0, ra2: 0, rBehind: true, rCross: false, rBendDir: 1,
     la1: 0, la2: 0, lBehind: false, lCross: false, lBendDir: -1,
@@ -368,6 +369,7 @@ function solve2BoneIK(rx, ry, tx, ty, L1, L2, bendDir) {
 function getSkeleton(s, f) {
   const bx = f.bx, by = f.by;
   const lean = f.lean || 0; // MapleStory-style horizontal pixel shear (-3..+3px), ZERO pixel breaking!
+  const twist = Math.max(-3, Math.min(3, f.twist || 0)); // 2.5D Cylinder Torso Twist (-3..+3)
   const hx = Math.max(-1, Math.min(1, f.hx || 0));
   const hy = Math.max(0, Math.min(2, f.hy || 0));
   const drop = Math.abs(lean) >= 2 ? 1 : 0; // slight natural drop when leaning deeply
@@ -378,16 +380,24 @@ function getSkeleton(s, f) {
   const bag    = [(s === 'front' ? 36 : 26) + bx + f.bagx, 46 + by + f.bagy];
   const rLift  = Math.max(0, (Math.abs(f.ra1) - 70) / 110) * 1.4;
   const lLift  = Math.max(0, (Math.abs(f.la1) - 70) / 110) * 1.4;
-  const rSh    = [(s === 'front' ? 26.0 : 37.0) + bx + lean, 37.6 - rLift + by + drop];
-  const lSh    = [(s === 'front' ? 36.6 : 25.8) + bx + lean, 37.8 - lLift + by + drop];
+  const shMid0  = (s === 'front') ? 31.3 : 31.4;
+  const shHalf0 = (s === 'front') ? 5.3  : -5.6;
+  const twistRad = twist * 0.28; // ~16 deg per step -> cos(48deg)=0.67 at |twist|=3
+  const cosT = Math.cos(twistRad), sinT = Math.sin(twistRad);
+  const shCenter = shMid0 + bx + lean + twist * 0.35;
+  const rSh    = [shCenter - shHalf0 * cosT, 37.6 - rLift + by + drop - sinT * 0.45];
+  const lSh    = [shCenter + shHalf0 * cosT, 37.8 - lLift + by + drop + sinT * 0.45];
   // 3/4 Pelvis Twist (Ispin Charles overlapping stride!): symmetric for front (-X) and back (+X)!
   const dir = (s === 'front') ? 1 : -1;
   const crossStride = f.lPin
     ? Math.max(0, (s === 'front' ? (34 - f.lPinX) : (f.lPinX - 29)) * 0.55)
     : Math.max(0, (dir * (f.lla1 - f.rla1)) / 28);
   const hipTwist = Math.min(2.6, crossStride);
-  const rHip   = [(s === 'front' ? 28 + hipTwist : 35 - hipTwist) + bx, 46.5 + by];
-  const lHip   = [(s === 'front' ? 34 - hipTwist : 29 + hipTwist) + bx, 47.5 + by];
+  const hipCos = Math.cos(twistRad * 0.5);
+  const hipMid = 31.0 + bx + twist * 0.25;
+  const hipHalf = ((s === 'front') ? (3.0 - hipTwist) : -(3.0 - hipTwist)) * hipCos;
+  const rHip   = [hipMid - hipHalf, 46.5 + by];
+  const lHip   = [hipMid + hipHalf, 47.5 + by];
 
   const rArm = fk2Bone(rSh[0], rSh[1], f.ra1, f.ra2, ARM_L1, ARM_L2);
   const lArm = fk2Bone(lSh[0], lSh[1], f.la1, f.la2, ARM_L1, ARM_L2);
@@ -412,25 +422,72 @@ function getSkeleton(s, f) {
   } else {
     lLeg = fk2Bone(lHip[0], lHip[1], f.lla1, f.lla2, LL, LL);
   }
-  return { pelvis, torso, head, bag, lean, rArm, lArm, rLeg, lLeg };
+  return { pelvis, torso, head, bag, lean, twist, rArm, lArm, rLeg, lLeg };
 }
 
-// Pixel-perfect horizontal shear blit for torso: bottom stays anchored at hips, upper rows slide smoothly by `lean`!
-function blitTorsoShear(buf, part, dstX, dstY, lean = 0) {
+// Pixel-perfect horizontal shear + 2.5D cylinder twist blit for torso!
+// Preserves crisp 1px outer silhouette while narrowing shoulder width & scrolling inner cloth/belt shading!
+function blitTorsoShear(buf, part, dstX, dstY, lean = 0, twist = 0) {
   const { w, h, px, py, data } = part;
   const src = data.data;
   const x0 = Math.round(dstX - px), y0 = Math.round(dstY - py);
+  const absT = Math.abs(twist);
   for (let y = 0; y < h; y++) {
     const dy = y0 + y; if (dy < 0 || dy >= 64) continue;
-    // Bottom (shorts, y >= h-6) stays 0; upper chest/shoulders shear smoothly toward `lean`!
     const t = Math.max(0, Math.min(1, (h - 2 - y) / Math.max(1, h - 3)));
     const rowShift = Math.round(t * lean);
+    if (twist === 0) {
+      for (let x = 0; x < w; x++) {
+        const dx = x0 + x + rowShift; if (dx < 0 || dx >= 64) continue;
+        const si = (y * w + x) * 4;
+        if (src[si + 3] > 128) {
+          const di = (dy * 64 + dx) * 4;
+          buf[di] = src[si]; buf[di+1] = src[si+1]; buf[di+2] = src[si+2]; buf[di+3] = 255;
+        }
+      }
+      continue;
+    }
+    // Find opaque horizontal span [minX..maxX] on this row
+    let minX = w, maxX = -1;
     for (let x = 0; x < w; x++) {
+      if (src[(y * w + x) * 4 + 3] > 128) { if (x < minX) minX = x; if (x > maxX) maxX = x; }
+    }
+    if (maxX < minX) continue;
+    // Upper torso (shirt) twists 100%, lower shorts twist 45% for natural waist torsion!
+    const twFactor = 0.45 + 0.55 * t;
+    const effT = twist * twFactor;
+    const span = maxX - minX + 1;
+    // Narrow silhouette width subtly (up to 1px per side for crisp, zero-notch 3/4->side profile!)
+    const trim = (span >= 9 && Math.abs(effT) >= 1.5) ? 1 : 0;
+    const newMin = minX + trim;
+    const newMax = maxX - trim;
+    const texShift = Math.round(effT * 0.95);
+    const shadeWidth = Math.abs(effT) >= 1.2 ? Math.min(2, Math.round(Math.abs(effT) * 0.65)) : 0;
+    for (let x = newMin; x <= newMax; x++) {
       const dx = x0 + x + rowShift; if (dx < 0 || dx >= 64) continue;
-      const si = (y * w + x) * 4;
+      let sx = x;
+      const isLeftEdge = (x === newMin);
+      const isRightEdge = (x === newMax);
+      if (isLeftEdge) sx = minX;
+      else if (isRightEdge) sx = maxX;
+      else {
+        // Scroll interior pixels horizontally across cylinder surface, clamped inside inner bounds
+        const inMin = Math.min(maxX, minX + 1), inMax = Math.max(minX, maxX - 1);
+        sx = Math.max(inMin, Math.min(inMax, x - texShift));
+      }
+      const si = (y * w + sx) * 4;
       if (src[si + 3] > 128) {
+        let r = src[si], g = src[si+1], b = src[si+2];
+        // Subtle 2.5D cylindrical turn-away shading on the side rotating away from viewer
+        if (!isLeftEdge && !isRightEdge && shadeWidth > 0) {
+          const distFromAwayEdge = (twist > 0) ? (x - newMin) : (newMax - x);
+          if (distFromAwayEdge <= shadeWidth) {
+            // Only darken non-outline bright/mid pixels subtly (preserving #482c24 outlines)
+            if (r + g + b > 260) { r = Math.max(0, r - 24); g = Math.max(0, g - 24); b = Math.max(0, b - 24); }
+          }
+        }
         const di = (dy * 64 + dx) * 4;
-        buf[di] = src[si]; buf[di+1] = src[si+1]; buf[di+2] = src[si+2]; buf[di+3] = 255;
+        buf[di] = r; buf[di+1] = g; buf[di+2] = b; buf[di+3] = 255;
       }
     }
   }
@@ -675,7 +732,7 @@ function renderFrame64(s, f, includeSword = true, useOutline = true) {
   }
 
   // Original pre-outlined parts (Torso -> Head): NEVER get a 2nd outer outline!
-  blitTorsoShear(buf, P.torso, K.torso[0], K.torso[1], K.lean);
+  blitTorsoShear(buf, P.torso, K.torso[0], K.torso[1], K.lean, K.twist);
   blitPart(buf, (s === 'front' && f.hurt) ? P.head_hurt : P.head, K.head[0], K.head[1], 0);
 
   // Front arms (procedural 1px outline ONLY on arm pixels!)
@@ -835,7 +892,7 @@ function renderTimelineThumbs() {
 
 function syncUI() {
   const f = frames[curIdx];
-  for (const k of ['bx','by','lean','hx','hy','ra1','ra2','la1','la2','rla1','rla2','lla1','lla2','rba','lba','sa']) {
+  for (const k of ['bx','by','lean','twist','hx','hy','ra1','ra2','la1','la2','rla1','rla2','lla1','lla2','rba','lba','sa']) {
     const val = f[k] ?? 0;
     const sl = document.getElementById('s_' + k);
     const ni = document.getElementById('n_' + k);
@@ -949,7 +1006,7 @@ function setSide(s) {
       f.lLegBend = (f.lLegBend || -1) * -1;
       f.ra1 = -f.ra1; f.ra2 = -f.ra2;
       f.la1 = -f.la1; f.la2 = -f.la2;
-      f.bx = -f.bx; f.lean = -f.lean; f.hx = -f.hx;
+      f.bx = -f.bx; f.lean = -f.lean; f.twist = -(f.twist || 0); f.hx = -f.hx;
     }
   }
   document.getElementById('btnFront').classList.toggle('active', s === 'front');
@@ -1147,15 +1204,15 @@ function loadPreset(name) {
   } else if (name === 'slash1') {
     if (side === 'front') {
       frames = [
-        { ...d(), bx: 1,  by: 0, lean: 0,  ra1: 165, ra2: 15,  rBehind: false, la1: -45, la2: 30,  lBehind: false, rPin: true,  rPinX: 31, rPinY: 55, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -90,  sBehind: false },
-        { ...d(), bx: -2, by: 0, lean: 0,  ra1: 90,  ra2: 0,   rBehind: false, la1: -75, la2: -15, lBehind: false, rPin: false, rla1: 30,  rla2: -45, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -150, sBehind: false },
-        { ...d(), bx: -5, by: 1, lean: -1, ra1: -30, ra2: -45, rCross: true,   rBehind: false, la1: -90, la2: 0, lBehind: false, rPin: true, rPinX: 20, rPinY: 56, rba: 10, lPin: true, lPinX: 33, lPinY: 57, lba: -10, sword: true, sa: 45, sBehind: false },
+        { ...d(), bx: 1,  by: 0, lean: 0,  twist: 2,  ra1: 165, ra2: 15,  rBehind: false, la1: -45, la2: 30,  lBehind: false, rPin: true,  rPinX: 31, rPinY: 55, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -90,  sBehind: false },
+        { ...d(), bx: -2, by: 0, lean: 0,  twist: 0,  ra1: 90,  ra2: 0,   rBehind: false, la1: -75, la2: -15, lBehind: false, rPin: false, rla1: 30,  rla2: -45, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -150, sBehind: false },
+        { ...d(), bx: -5, by: 1, lean: -1, twist: -3, ra1: -30, ra2: -45, rCross: true,   rBehind: false, la1: -90, la2: 0, lBehind: false, rPin: true, rPinX: 20, rPinY: 56, rba: 10, lPin: true, lPinX: 33, lPinY: 57, lba: -10, sword: true, sa: 45, sBehind: false },
       ];
     } else {
       frames = [
-        { ...d(), bx: -1, by: 0, lean: 0, ra1: -115, ra2: -35, rBehind: true,  la1: 45, la2: -35, lBehind: false, rPin: true,  rPinX: 33, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85, sBehind: true },
-        { ...d(), bx: 2,  by: 0, lean: 0, ra1: -90,  ra2: 0,   rBehind: false, la1: 85, la2: 10,  lBehind: false, rPin: false, rla1: -30, rla2: 45, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -30, sBehind: false },
-        { ...d(), bx: 5,  by: 1, lean: 1, ra1: 55,   ra2: 35,  rBehind: true,  la1: 95, la2: 0,   lBehind: false, rPin: true,  rPinX: 43, rPinY: 57, rba: -10, lPin: true, lPinX: 30, lPinY: 57, lba: 10, sword: true, sa: 150, sBehind: true },
+        { ...d(), bx: -1, by: 0, lean: 0, twist: -2, ra1: -115, ra2: -35, rBehind: true,  la1: 45, la2: -35, lBehind: false, rPin: true,  rPinX: 34, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85, sBehind: true },
+        { ...d(), bx: 2,  by: 0, lean: 0, twist: 0,  ra1: -90,  ra2: 0,   rBehind: false, la1: 85, la2: 10,  lBehind: false, rPin: false, rla1: -30, rla2: 45, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -30, sBehind: false },
+        { ...d(), bx: 5,  by: 1, lean: 1, twist: 3,  ra1: 55,   ra2: 35,  rBehind: true,  la1: 90, la2: 15,  lBehind: false, rPin: true,  rPinX: 43, rPinY: 57, rba: -10, lPin: true, lPinX: 30, lPinY: 57, lba: 10, sword: true, sa: 150, sBehind: true },
       ];
     }
   } else if (name === 'slash2') {
