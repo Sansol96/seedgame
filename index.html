@@ -178,19 +178,18 @@
 
   <div class="right">
     <div class="box">
-      <h3>🧍 척추(시어) · 머리 · 가방 <button class="mini" onclick="setF('lean',0);setF('hx',0);setF('hy',0);syncUI()">기울임 0</button></h3>
+      <h3>🧍 척추(시어) · 머리 <button class="mini" onclick="setF('lean',0);setF('hx',0);setF('hy',0);syncUI()">기울임 0</button></h3>
       <div class="row"><label>몸통 X</label><input type="range" id="s_bx" min="-5" max="5" value="0" oninput="setF('bx',+this.value)"><input type="number" class="val-in" id="n_bx" min="-5" max="5" value="0" oninput="setNum('bx',this)"></div>
       <div class="row"><label>몸통 Y</label><input type="range" id="s_by" min="-5" max="4" value="0" oninput="setF('by',+this.value)"><input type="number" class="val-in" id="n_by" min="-5" max="4" value="0" oninput="setNum('by',this)"></div>
       <div class="row"><label>몸통 숙임</label><input type="range" id="s_lean" min="-3" max="3" value="0" oninput="setF('lean',+this.value)"><input type="number" class="val-in" id="n_lean" min="-3" max="3" value="0" oninput="setNum('lean',this)"></div>
-      <div class="row"><label>머리 앞/뒤</label><input type="range" id="s_hx" min="-3" max="3" value="0" oninput="setF('hx',+this.value)"><input type="number" class="val-in" id="n_hx" min="-3" max="3" value="0" oninput="setNum('hx',this)"></div>
-      <div class="row"><label>머리 끄덕</label><input type="range" id="s_hy" min="-2" max="3" value="0" oninput="setF('hy',+this.value)"><input type="number" class="val-in" id="n_hy" min="-2" max="3" value="0" oninput="setNum('hy',this)"></div>
-      <div class="row"><label>가방 X</label><input type="range" id="s_bagx" min="-4" max="4" value="0" oninput="setF('bagx',+this.value)"><input type="number" class="val-in" id="n_bagx" min="-4" max="4" value="0" oninput="setNum('bagx',this)"></div>
-      <div class="row"><label>가방 Y</label><input type="range" id="s_bagy" min="-3" max="3" value="0" oninput="setF('bagy',+this.value)"><input type="number" class="val-in" id="n_bagy" min="-3" max="3" value="0" oninput="setNum('bagy',this)"></div>
+      <div class="row"><label>머리 앞/뒤</label><input type="range" id="s_hx" min="-1" max="1" value="0" oninput="setF('hx',+this.value)"><input type="number" class="val-in" id="n_hx" min="-1" max="1" value="0" oninput="setNum('hx',this)"></div>
+      <div class="row"><label>머리 끄덕</label><input type="range" id="s_hy" min="0" max="2" value="0" oninput="setF('hy',+this.value)"><input type="number" class="val-in" id="n_hy" min="0" max="2" value="0" oninput="setNum('hy',this)"></div>
       <div class="chk-row"><label><input type="checkbox" id="c_hurt" onchange="setF('hurt',this.checked)"> 피격 표정(&gt; &lt;)</label></div>
     </div>
 
     <div class="box">
       <h3>💪 오른팔 (검손 · 초록) <button class="mini" onclick="flipBend('r')">굽힘 반전</button></h3>
+      <div class="row"><label>팔 두께</label><input type="range" id="s_armr" min="1.45" max="2.35" step="0.05" value="1.85" oninput="ARM_R=+this.value;document.getElementById('v_armr').textContent=ARM_R.toFixed(2);render()"><span class="val" id="v_armr">1.85</span></div>
       <div class="row"><label>상박 각도</label><input type="range" id="s_ra1" min="-180" max="180" value="8" oninput="setF('ra1',+this.value)"><input type="number" class="val-in" id="n_ra1" min="-180" max="180" value="8" oninput="setNum('ra1',this)"></div>
       <div class="row"><label>팔꿈치 굽힘</label><input type="range" id="s_ra2" min="-150" max="150" value="0" oninput="setF('ra2',+this.value)"><input type="number" class="val-in" id="n_ra2" min="-150" max="150" value="0" oninput="setNum('ra2',this)"></div>
       <div class="chk-row">
@@ -219,6 +218,8 @@
       <div class="row"><label>오른 무릎</label><input type="range" id="s_rla2" min="-135" max="135" value="0" oninput="setF('rla2',+this.value)"><input type="number" class="val-in" id="n_rla2" min="-135" max="135" value="0" oninput="setNum('rla2',this)"></div>
       <div class="row"><label>왼 허벅지</label><input type="range" id="s_lla1" min="-120" max="120" value="0" oninput="setF('lla1',+this.value)"><input type="number" class="val-in" id="n_lla1" min="-120" max="120" value="0" oninput="setNum('lla1',this)"></div>
       <div class="row"><label>왼 무릎</label><input type="range" id="s_lla2" min="-135" max="135" value="0" oninput="setF('lla2',+this.value)"><input type="number" class="val-in" id="n_lla2" min="-135" max="135" value="0" oninput="setNum('lla2',this)"></div>
+      <div class="row"><label>오른 신발</label><input type="range" id="s_rba" min="-35" max="35" step="5" value="0" oninput="setF('rba',+this.value)"><input type="number" class="val-in" id="n_rba" min="-35" max="35" value="0" oninput="setNum('rba',this)"></div>
+      <div class="row"><label>왼 신발</label><input type="range" id="s_lba" min="-35" max="35" step="5" value="0" oninput="setF('lba',+this.value)"><input type="number" class="val-in" id="n_lba" min="-35" max="35" value="0" oninput="setNum('lba',this)"></div>
       <div class="chk-row" style="margin-top:4px; align-items:center;">
         <label><input type="checkbox" id="c_swaplegs" onchange="setF('swapLegs',this.checked)"> 🔀 오른/왼다리 앞뒤 반전</label>
         <button class="mini" onclick="flipLegBend('r')">오른무릎 반전</button>
@@ -240,13 +241,14 @@
 <div id="toast">완료!</div>
 
 <script>
-const PARTS_DATA = {"front": {"head": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAATCAYAAACUef2IAAABwklEQVR4nK1UzytEURQ+b3o2kmYhkRqmxo8UdorVxMZCycZmVoqsldlQFkJp/AMasrKxmZSFlMnKlB1KQ2p+lEyymCQbi6fvjHPnvmue3uCr173v3Hu/7/y61yIPTAz0OOQDJzf3Vi277UUYGx+kcFebsufyJco9lSncHjSPOLUELJM0ZhDqxLXssnZwdu0it/yQ+kE6k6WL26Iit/+DFBgb6VOpAXlA/qLdkWou8yX6K2zxVoACaep1Aee+iuuwx0hB4eON9o8ueUNnQxP9FhJ5oKMlyKGnM1l6fCmrDUIuI/boNl1ct8NBJgYZwhcUnl95ER/EMEoPyyFZV2c0uyCgEx4m4uw1CHWcXxW5lfwUdX3vlFuOew4FREp2ktv0/nBHi1vJapitzTyiKBCIDoXUDURtIAb77NSwi9wWUkFjpJcFTGyurLEISAD9asNu3ky+IPBCDgCT03N0nNp1ES9vrLrWiULqH2lCKnWoHANIgxcqZBXoongjUBtEibk0gou4HiBs5BKkIjzaH/J+Nsnw6CeAaCaeUHNAHiLVFbIZHqCAXliYX1Jz6RghBOR1+/b6i4iEKCLIv3iHLjJJzYf+E0rM8coKvHBlAAAAAElFTkSuQmCC", "w": 22, "h": 19, "px": 9, "py": 18}, "head_hurt": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAATCAYAAACUef2IAAABw0lEQVR4nK1Uu0oDQRS9G9ZGRFKIKEI0EB8IaidoFbSxEMTGJpWgWAumshMRJP6ARLGysRHBQgSDlQE7FSSKkAeIQSyCiI1F5IyeyexkF+LjQNjJnbnn3NeMIwGYGuqrSgM4ubl3/OxuEGFicliiPR3ani+UJf9UkWhn2Hap+gk4NmnCIjSJ/ezc2z+79pA7jZA2gkw2Jxe3JU3u/gcpMDE2oEsD8hD/xXtjtVoWyvJXuIyWQIMM9R8Bft/NraqIUYLix5vsHV2qA91NLfJbMPNQV1tYpZ7J5uTxpaIPkJxfnDFtprhpR4CKGGRInyg+v6pN/CCGL2eYTtzXPoadCJmEB6mkihqEJs6vSmqUGmnq+u6pGjk1c2ggSrKd3pL3hztZ3kzX0mxvVV80BQLxkYi+gegNxGCfnxn1kLskJZpj/UrAxsbqmhIBCWBebdjtm6kuCKKgw/Tsghwf7tQRoxS044xIxLOHUprQNQZQBjh/OdZgi5lrvBHoDbLEmoPgIQ6K2E8MaaOWIKXf+GAk+Nk89ilDkB1Ec8mUXgN8iPRU8DAiQAODsLS4otecGBICfN3qXn+KMEWKoP6MDlNkk9oP/Sem4QHXKYSAbgAAAABJRU5ErkJggg==", "w": 22, "h": 19, "px": 9, "py": 18}, "torso": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAARCAYAAADUryzEAAABBklEQVR4nGNkgAIPXbX/IHpVdymYz6WiDqa/3bnJEFbaDWZLiwgwyIvxwbQwHLv2iIEFWTNIwVUGZgall/cZvr98xHBPXJFBRkENruHpmw8o9I7LtxjBBiADGQVlhntIbBCYvXo2mH7y4C5DY2kHWCNMPRO6AamhqWCNMM3IAF0zVgOkRQTAhiADkM0gjA0wwfyC7DdsAJuLMFxQ310BNgSXK7ABFpxWEmE7hgtkFJRxugJvGBADiAoDfK7A5QJGGAOWGmEJB5ZoQIbM3X8KJe4xDPDQVfsPUogtKmHiMDn0hMSCrBmbBkIAayAia0TOfUQbgOwaUJbFB+BhgMsAZNeg+x8kBgDeqHdDp53dYwAAAABJRU5ErkJggg==", "w": 16, "h": 17, "px": 6, "py": 9}, "bag": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAHCAYAAAA1WQxeAAAAWElEQVR4nGNkYGBg8NBV+w+i0cGOy7cYGUGS0iIC2OQZnr75wMAC48iL8aFIPnz1CUwzYZOsnTkHLgZWgA6a01PgbCaQQ45de4ShCCQGdiRMAN0nIEkQDQCj0Bz2NpgVbQAAAABJRU5ErkJggg==", "w": 8, "h": 7, "px": 3, "py": 2}, "boot_r": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAGCAYAAAAPDoR2AAAATElEQVR4nGNkgAIPXbX/MLa0iADD0zcfGFhgElZacjA5MABJMmGTgAEmEKEoKYAi+PDVJzANNvb+8w9wQZBxILDj8i1GRnTHgARhbADk7R1DpMCtFQAAAABJRU5ErkJggg==", "w": 7, "h": 6, "px": 3, "py": 1}, "boot_l": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAYAAAD+Bd/7AAAAR0lEQVR4nGNkgAIPXbX/MDYM7Lh8i5EFWcBKSw7OfvjqE1gTE0w3siQyYIJJKkoKYFUAt+L+8w9wwWPXHsHdwIjNgSAJGBsA7QcZBKvoR68AAAAASUVORK5CYII=", "w": 8, "h": 6, "px": 4, "py": 1}}, "back": {"head": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAUCAYAAACXtf2DAAABlklEQVR4nGNkwAM8dNX+g2hpEQGGp28+YFWz4/ItRnxmsOAyFASinfUYFBUk4HL3H7wA0zAxKP8/PosYsRmObjAy2Hf8BphWlBSAq5m/8RTYh9gsYUQ2HJ/B6JY4WWqgiIF8s3TvJQxLGEk1HB/AZgkTjOGgqgJXBMOkApgDkeORCeb6h7+/MFAK5Fl5wPGHkYrQg4bUoJJn5QHTIEdC9F5CtQBZobyqClghTBMIEPIdPnkWXAopCbJoSDD9B0U2PJJBgJyIxQaQg5gJllGoZTgMgIoXUAJiAnkDVs6AbIblVEqBg74cZhy0zN0FZ6PnVGIByIGgYuT+8w9gX4DzQU2yGzgHblk/h2F2RhDDsWuPGEgB95GCF2Y4DDAhx7xPYArD/ENnGEAWkgruY4lDUNCDLQAXDc8/MFhpyTE8fPUJHg/o8YErfkB6wRhqDsgMUCiA4hdcKCU7mv2XF+PDqlkRWiyjBANSMkS3FGQ4ctGNUlyDaJAvyAXohqNYgGwRKPZBPgJpAAGY70B8dJ+CggJWpWKrcADkkuCubRchaAAAAABJRU5ErkJggg==", "w": 24, "h": 20, "px": 11, "py": 19}, "head_hurt": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAUCAYAAACXtf2DAAABlklEQVR4nGNkwAM8dNX+g2hpEQGGp28+YFWz4/ItRnxmsOAyFASinfUYFBUk4HL3H7wA0zAxKP8/PosYsRmObjAy2Hf8BphWlBSAq5m/8RTYh9gsYUQ2HJ/B6JY4WWqgiIF8s3TvJQxLGEk1HB/AZgkTjOGgqgJXBMOkApgDkeORCeb6h7+/MFAK5Fl5wPGHkYrQg4bUoJJn5QHTIEdC9F5CtQBZobyqClghTBMIEPIdPnkWXAopCbJoSDD9B0U2PJJBgJyIxQaQg5gJllGoZTgMgIoXUAJiAnkDVs6AbIblVEqBg74cZhy0zN0FZ6PnVGIByIGgYuT+8w9gX4DzQU2yGzgHblk/h2F2RhDDsWuPGEgB95GCF2Y4DDAhx7xPYArD/ENnGEAWkgruY4lDUNCDLQAXDc8/MFhpyTE8fPUJHg/o8YErfkB6wRhqDsgMUCiA4hdcKCU7mv2XF+PDqlkRWiyjBANSMkS3FGQ4ctGNUlyDaJAvyAXohqNYgGwRKPZBPgJpAAGY70B8dJ+CggJWpWKrcADkkuCubRchaAAAAABJRU5ErkJggg==", "w": 24, "h": 20, "px": 11, "py": 19}, "torso": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAYAAAAmlE46AAAAsElEQVR4nGNkYGBg8NBV+w+ipUUEGJ6++cBAFPDQVft/fMe8/49vHITTyNhDV+1/sqMZnA3Tx7Tj8i3GxtIOrIamhqaCXQECTx7cRZFjwuWSVCRNIOfLKCgT1oiuafbq2YRtxKYJBHDaCDIR5FdsmkAAp434NIEAQT9i04TNRkbkyAcBQglgx+VbjGCNyIIgQ2AG4AIgg0GaccYjAwFAO424/Ey2jfDAwRYw2GyDhSoAfPdzOikWB2AAAAAASUVORK5CYII=", "w": 14, "h": 16, "px": 6, "py": 7}, "bag": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAARklEQVR4nGNkgAIPXbX/0iICDPJifGD+w1efGJ6++cDABFOADmAKWUA6QQwrLTkUBSATQIBpx+VbjLhMAQG4JMwkZAByEwCe1BEAbYB2gAAAAABJRU5ErkJggg==", "w": 8, "h": 5, "px": 4, "py": 1}, "boot_l": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAYAAAD+Bd/7AAAASElEQVR4nGNgYGBg8NBV+w/Cf+4cgmMQHyTHCGJYacmB2Bjg2LVHDExYZZAAQQUsOy7fYmRgYADbJy0igKEAJAkHMIfBAEgzAK0bG+JE9V0kAAAAAElFTkSuQmCC", "w": 8, "h": 6, "px": 4, "py": 1}, "boot_r": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAYAAACJmvbYAAAAN0lEQVR4nGP00FX7Ly0iwCAvxseADI5de8TABGKgS8AAWBIXYIEZATIaqyQIPH3zAUVix+VbjAA7DwzP/KrOPAAAAABJRU5ErkJggg==", "w": 7, "h": 5, "px": 3, "py": 1}}, "sword": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAqUlEQVR4nGNgGAWjYBTgBB66av9xy1LB8P+fd/ynhiUsMANB9I7LtxixWcZAJMCmH2zB2lUxYE5w2BK4Yd+enGJYf3QfSa4NtHb6j24Z2AIuGTOwgdIiAmDJp28+gOnW5WdIssAkp4uhOtIEbhnIErAFIMORDYaBu7duEW34+11zIAZPweKD4LAlKIKgcH959ybD+12nGSgJf7gFuCQJyQ3efDAKRsHgAgDWlUyncv1ilAAAAABJRU5ErkJggg==", "w": 24, "h": 24, "px": 5, "py": 12}};
+const PARTS_DATA = {"front": {"head": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAATCAYAAACUef2IAAABwUlEQVR4nK2UzytEURTHz5uejaRZSKSGqfEjhZ1iNbGxULKxmZUia2U2lIVQGv+AhqxsbCZlIWWyMmWH0pCaHyWTLCbJxuLpe8a5c981T2/wqdd779x7v+fcc869FnkwMdDjkA9Obu6tWnbbSzA2PkjhrjZlz+VLlHsqU7g9aC5xajmwTNGYIagL17LL2MHZtUvc8iPqh3QmSxe3RSVu/4coGBvpU6mBeED+ot2Rai7zJfortkQroECa97rAuq/iOhwxUlD4eKP9o0ue0NnQRL9Fdh7oaAny1tOZLD2+lNUEEZc35ug23bluR4AsDDFsXyg8v/IgHjjDW3pYFsm4WqPZhYAueJiIc9QQ1Dm/KnIr+Snq+t4ptxz3HAqIlOwkt+n94Y4Wt5LVbbY28xtFgYPoUEidQNQGzmCfnRp2idsiKjRGetmByebKGjuBCNCPNuzmyeQDgihkAZicnqPj1K5LeHlj1TVOFFL/SBNSqaNyDJAGLypiFXSnuCNQG+wS39IILuF6wLaRS4iK49H+kPe1SUZEPwGhmXhCfQO5iFRXyGREgAJ6sTC/pL6lY0QQyO327fY3nQgSGUAXmaLmRf8JucXuyjFgNv0AAAAASUVORK5CYII=", "w": 22, "h": 19, "px": 9, "py": 18}, "head_hurt": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAATCAYAAACUef2IAAABwElEQVR4nK1UO0sDQRCeC2cjIilEFCEaiA8EtRO0CtpYCGJjk0pQrAVT2YkIEv+ARLGysREhRRAMVgbsVJAoQh4gBrEIIjYWJ9/o7O1t7uB8fHDs3uzON88diwIwMzLgUAjkb+4tP7kdRJiaHqV4X5eSlyt1Kj81KN4dNVUcPwOWSZoyCHViP7mcHZ5de8itMKRhUCiW6OK2psjt/yAFpiaGVGpAHpG/ZH/CzWWlTn+FLd4KUCDN+o8Ave/iOuwxUlD9eKODk0u+0NvSRr+FRB7p6Yhy6IViiR5fGuqCkMuKO7pMN67L4SATgwzhC6rPr3yID8awSg+LkpwrHU0uiOiER5k0ew1CHedXNW6lMEXd3D/lluOeQwGRkt3sDr0/3NHqdtYNs7OdVxQFBpJjMfUCURsYg3xxbtxDbgupoDUxyAZMbK1vsBGQAPrThtx8mfxA4IUozM4vUe54r4kYqRA57hDFPGdIpQ6VYwBpgPKXogvTmL7HjEBtECX20gge4iCP/YwhbOQSpKI3ORwLHps5nzQEyUG0kM6oPSCDSHWFXIYHKGAQVpbX1F46RggBmW5N0980IhDPAHSRSWoO+k8V6f7ICDfL4gAAAABJRU5ErkJggg==", "w": 22, "h": 19, "px": 9, "py": 18}, "torso": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAANCAYAAACgu+4kAAAAsUlEQVR4nGNkYGBg8NBV+w+i67srQBRDY2kHmIaJIfOlRQQYnr75AGbvuHyLkRGkefbq2QxPHtxlIARgBoE0wsRYYAwZBWWCBoAsAoHU0NT/MEOYCOrCYRDM20wgk1JDU0kyAKSeIhcgAyaGIW8AC4yBHpCwKEMH6OrAIQmKEistObjgsWuP8NqKNSGBwNk7z8D0st1bGKbkZ2HVjG443ACYZhBI9A4A0yJ8PHhdApIEABG4P9CfNKhrAAAAAElFTkSuQmCC", "w": 16, "h": 13, "px": 6, "py": 8}, "bag": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==", "w": 1, "h": 1, "px": 0, "py": 0}, "boot_r": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAGCAYAAAAPDoR2AAAASElEQVR4nGNkgAIPXbX/MDYMMMIkrLTkUCSOXXvEwIRNAgaYQISipACK4MNXn8A0C4i4//wDXPDpGwh7x+VbjHA7YbpAgjAxAAnrG5dMplYnAAAAAElFTkSuQmCC", "w": 7, "h": 6, "px": 3, "py": 1}, "boot_l": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAYAAAD+Bd/7AAAAT0lEQVR4nGP00FX7v+PyLUYQzYAGQOIsyAJWWnJw9sNXnxhAmhhBHBADWRKm4OmbDwxMMElFSQF0G8AAbsX95x/ggseuPYK7AW4FuuNgbAAsUSKBgEkkEAAAAABJRU5ErkJggg==", "w": 8, "h": 6, "px": 4, "py": 1}}, "back": {"head": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAUCAYAAACXtf2DAAABZ0lEQVR4nGNkwAM8dNX+MxAAOy7fYsQnz4LP0GhnPQZFBQm43P0HL8A0TAzK/4/PIkZshqMbjAz2Hb8BphUlBeBq5m88xfD0zQesljAiG47PYHRLnCw1UMRAvlm69xKGJYykGo4PYLOECcZwUFWBK4JhUgHMgcjxyARz/cPfXxgoBfKsPOD4w0hF6EFDalDJs/KAaZAjIXovoVqArFBeVQWsEKYJBAj5Dp88Cy6FlARZNCSY/oMiGx7JIEBOxGIDyEHMBMso1DIcBqRFBMCpiQnkDVAuBAFK8wEycNCXw14WUQr2Hb8BLkbuP/+AyAc1yW4UGXofKXiRDQdbgK4QVphRYgkyAFsALhqef4DbDLME3TJclsP0wsx5+OoTw7Frj8BlEryws9KCRAo6UIQWy8iGI5ek6JaCDEcuulGKaxCNyyJiAMjVIIBcmmJUECCLQGlYXowP7BoQALFhroOxkQ0FqcdV4QAAcBrKKbbVHBQAAAAASUVORK5CYII=", "w": 24, "h": 20, "px": 11, "py": 19}, "head_hurt": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAUCAYAAACXtf2DAAABZ0lEQVR4nGNkwAM8dNX+MxAAOy7fYsQnz4LP0GhnPQZFBQm43P0HL8A0TAzK/4/PIkZshqMbjAz2Hb8BphUlBeBq5m88xfD0zQesljAiG47PYHRLnCw1UMRAvlm69xKGJYykGo4PYLOECcZwUFWBK4JhUgHMgcjxyARz/cPfXxgoBfKsPOD4w0hF6EFDalDJs/KAaZAjIXovoVqArFBeVQWsEKYJBAj5Dp88Cy6FlARZNCSY/oMiGx7JIEBOxGIDyEHMBMso1DIcBqRFBMCpiQnkDVAuBAFK8wEycNCXw14WUQr2Hb8BLkbuP/+AyAc1yW4UGXofKXiRDQdbgK4QVphRYgkyAFsALhqef4DbDLME3TJclsP0wsx5+OoTw7Frj8BlEryws9KCRAo6UIQWy8iGI5ek6JaCDEcuulGKaxCNyyJiAMjVIIBcmmJUECCLQGlYXowP7BoQALFhroOxkQ0FqcdV4QAAcBrKKbbVHBQAAAAASUVORK5CYII=", "w": 24, "h": 20, "px": 11, "py": 19}, "torso": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAMCAYAAABSgIzaAAAAe0lEQVR4nGNkYGBg8NBV+89AImAEaZq9ejbDkwd3idIgo6DMkBqaysCCLEAKYNpx+RYjyARSARPJOoaOxtTQVAZQuMBDFZciXACuEZ8iKy05OPvYtUdgmhEmAEoIyApg4OydZyj8n7/+YDr14atPGBpF+HgY3nz6giEOADBPJbbS7wu9AAAAAElFTkSuQmCC", "w": 14, "h": 12, "px": 6, "py": 7}, "bag": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGBgAAAABQABpfZFQAAAAABJRU5ErkJggg==", "w": 1, "h": 1, "px": 0, "py": 0}, "boot_l": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAGCAYAAAD+Bd/7AAAAR0lEQVR4nGNkYGBg8NBV+w+i0cGOy7cYWUCS0c56DPeff8Cm5j8TNlFkAFYA0q0oKYBVASOyG6RFUBU9ffMBogAG0B0LciQAfYwVwamR1pEAAAAASUVORK5CYII=", "w": 8, "h": 6, "px": 4, "py": 1}, "boot_r": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAGCAYAAAAPDoR2AAAAR0lEQVR4nGNkYGBg8NBV+w+ikcGOy7cYWUAS0c56DPeff0CX/8+ELoIMwJIgXYqSAhiSLCDi2LVHDA9ffcKQZIQx0B0FchAAw44WZW5q3tEAAAAASUVORK5CYII=", "w": 7, "h": 6, "px": 3, "py": 1}}, "sword": {"src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAqUlEQVR4nGNgGAWjYBTgBB66av9xy1LB8P+fd/ynhiUsMANB9I7LtxixWcZAJMCmH2zB2lUxYE5w2BK4Yd+enGJYf3QfSa4NtHb6j24Z2AIuGTOwgdIiAmDJp28+gOnW5WdIssAkp4uhOtIEbhnIErAFIMORDYaBu7duEW34+11zIAZPweKD4LAlKIKgcH959ybD+12nGSgJf7gFuCQJyQ3efDAKRsHgAgDWlUyncv1ilAAAAABJRU5ErkJggg==", "w": 24, "h": 24, "px": 5, "py": 12}};
 const IMGS = {};
 const SCALE = 8;
 
 // Exact bone lengths (in 64x64 pixels) -> FIXED human proportions, NEVER stretches!
-const ARM_L1 = 3.6, ARM_L2 = 3.6; // Upper arm + Forearm = 7.2px total!
-const LEG_L1 = 3.1, LEG_L2 = 3.1; // Thigh + Shin = 6.2px (gives clean knee bend even when torso bobs up 1px!)
+const ARM_L1 = 3.6, ARM_L2 = 3.6;
+let ARM_R = 1.85; // Upper arm + Forearm = 7.2px total!
+const LEG_L1 = 4.5, LEG_L2 = 4.5; // Thigh + Shin = 6.2px (gives clean knee bend even when torso bobs up 1px!)
 
 const COL = {
   OUT:     [72, 45, 38],
@@ -255,6 +257,8 @@ const COL = {
   SKIN:    [252, 220, 194],
   SKIN_D:  [242, 184, 155],
   THIGH_S: [227, 149, 120],
+  PANTS:   [99, 65, 54],
+  PANTS_D: [79, 51, 42],
 };
 
 function loadAllImages() {
@@ -288,25 +292,28 @@ function loadAllImages() {
   return Promise.all(tasks);
 }
 
-function defaultFrame() {
+function defaultFrame(s) {
+  const curSide = s || (typeof side !== 'undefined' ? side : 'front');
+  const g = groundAnkles(curSide);
+  const legBend = curSide === 'front' ? -1 : 1;
   return {
     bx: 0, by: 0, lean: 0, hx: 0, hy: 0, bagx: 0, bagy: 0, hurt: false,
     // Arms: a1 = upper arm angle (0=down, +clockwise), a2 = elbow bend relative to a1!
-    ra1: 8, ra2: 0, rBehind: false, rCross: false, rBendDir: 1,
-    la1: -8, la2: 0, lBehind: false, lCross: false, lBendDir: -1,
+    ra1: 0, ra2: 0, rBehind: true, rCross: false, rBendDir: 1,
+    la1: 0, la2: 0, lBehind: false, lCross: false, lBendDir: -1,
     // Legs: a1 = thigh angle (0=down), a2 = knee bend relative to a1!
     // rPin/lPin = Foot Pinning (IK Lock to ground so feet NEVER drift when torso moves!)
-    rla1: 0, rla2: 0, rLegBend: -1, rPin: false, rPinX: 27, rPinY: 55,
-    lla1: 0, lla2: 0, lLegBend: -1, lPin: false, lPinX: 34, lPinY: 56, swapLegs: false,
+    rla1: 0, rla2: 0, rLegBend: legBend, rPin: false, rPinX: g.rx, rPinY: g.ry, rba: 0,
+    lla1: 0, lla2: 0, lLegBend: legBend, lPin: false, lPinX: g.lx, lPinY: g.ly, lba: 0, swapLegs: false,
     sword: false, sa: 45, sBehind: false,
   };
 }
 
 function groundAnkles(s) {
-  // Exact ankle coordinates matching original idle_front (rFoot=59, lFoot=61) & idle_back (lFoot=60, rFoot=59)!
+  // Exact ankle coordinates matching 47px hero_f0 (rFoot=59, lFoot=61) & hero_b0 (lFoot=61, rFoot=59)!
   return s === 'front'
     ? { rx: 27, ry: 55, lx: 34, ly: 57 }
-    : { rx: 35, ry: 56, lx: 29, ly: 56 };
+    : { rx: 35, ry: 55, lx: 29, ly: 57 };
 }
 
 function snapDeg(deg) {
@@ -361,42 +368,49 @@ function solve2BoneIK(rx, ry, tx, ty, L1, L2, bendDir) {
 function getSkeleton(s, f) {
   const bx = f.bx, by = f.by;
   const lean = f.lean || 0; // MapleStory-style horizontal pixel shear (-3..+3px), ZERO pixel breaking!
-  const hx = f.hx || 0, hy = f.hy || 0;
+  const hx = Math.max(-1, Math.min(1, f.hx || 0));
+  const hy = Math.max(0, Math.min(2, f.hy || 0));
   const drop = Math.abs(lean) >= 2 ? 1 : 0; // slight natural drop when leaning deeply
 
-  const pelvis = [31 + bx, 49 + by];
-  const torso  = [31 + bx, 44 + by];
-  const head   = [32 + bx + lean + hx, (s === 'front' ? 35 : 36) + by + drop + hy];
-  const bag    = [(s === 'front' ? 36 : 26) + bx + f.bagx, 48 + by + f.bagy];
-  const rSh    = [(s === 'front' ? 26 : 36) + bx + lean, 38 + by + drop];
-  const lSh    = [(s === 'front' ? 36 : 26) + bx + lean, 38 + by + drop];
-  const rHip   = [(s === 'front' ? 27 : 35) + bx, (s === 'front' ? 50 : 51) + by];
-  const lHip   = [(s === 'front' ? 34 : 29) + bx, (s === 'front' ? 51 : 51) + by];
+  const pelvis = [31 + bx, 47 + by];
+  const torso  = [31 + bx, 42 + by];
+  const head   = [32 + bx + lean + hx, (s === 'front' ? 33 : 34) + by + drop + hy];
+  const bag    = [(s === 'front' ? 36 : 26) + bx + f.bagx, 46 + by + f.bagy];
+  const rLift  = Math.max(0, (Math.abs(f.ra1) - 70) / 110) * 1.4;
+  const lLift  = Math.max(0, (Math.abs(f.la1) - 70) / 110) * 1.4;
+  const rSh    = [(s === 'front' ? 26.0 : 37.0) + bx + lean, 37.6 - rLift + by + drop];
+  const lSh    = [(s === 'front' ? 36.6 : 25.8) + bx + lean, 37.8 - lLift + by + drop];
+  // 3/4 Pelvis Twist (Ispin Charles overlapping stride!): symmetric for front (-X) and back (+X)!
+  const dir = (s === 'front') ? 1 : -1;
+  const crossStride = f.lPin
+    ? Math.max(0, (s === 'front' ? (34 - f.lPinX) : (f.lPinX - 29)) * 0.55)
+    : Math.max(0, (dir * (f.lla1 - f.rla1)) / 28);
+  const hipTwist = Math.min(2.6, crossStride);
+  const rHip   = [(s === 'front' ? 28 + hipTwist : 35 - hipTwist) + bx, 46.5 + by];
+  const lHip   = [(s === 'front' ? 34 - hipTwist : 29 + hipTwist) + bx, 47.5 + by];
 
   const rArm = fk2Bone(rSh[0], rSh[1], f.ra1, f.ra2, ARM_L1, ARM_L2);
   const lArm = fk2Bone(lSh[0], lSh[1], f.la1, f.la2, ARM_L1, ARM_L2);
 
-  // Foot Pinning (Ground IK Lock!): when pinned, solve 2-bone IK from moving hip to fixed ground pin!
-  // NEVER stretch leg past physical max length (LEG_L1 + LEG_L2 = 5.2px)!
-  const MAX_LEG = LEG_L1 + LEG_L2;
+  const RL = 4.25, LL = 4.75;
   let rLeg, lLeg;
   if (f.rPin) {
-    const [a1, a2] = solve2BoneIK(rHip[0], rHip[1], f.rPinX, f.rPinY, LEG_L1, LEG_L2, f.rLegBend || -1);
-    rLeg = fk2Bone(rHip[0], rHip[1], a1, a2, LEG_L1, LEG_L2);
-    if (Math.hypot(f.rPinX - rHip[0], f.rPinY - rHip[1]) <= MAX_LEG + 0.3) {
-      rLeg.end = [f.rPinX, f.rPinY]; // Lock precisely when physically reachable!
+    const [a1, a2] = solve2BoneIK(rHip[0], rHip[1], f.rPinX, f.rPinY, RL, RL, f.rLegBend || -1);
+    rLeg = fk2Bone(rHip[0], rHip[1], a1, a2, RL, RL);
+    if (Math.hypot(f.rPinX - rHip[0], f.rPinY - rHip[1]) <= RL * 2 + 0.3) {
+      rLeg.end = [f.rPinX, f.rPinY];
     }
   } else {
-    rLeg = fk2Bone(rHip[0], rHip[1], f.rla1, f.rla2, LEG_L1, LEG_L2);
+    rLeg = fk2Bone(rHip[0], rHip[1], f.rla1, f.rla2, RL, RL);
   }
   if (f.lPin) {
-    const [a1, a2] = solve2BoneIK(lHip[0], lHip[1], f.lPinX, f.lPinY, LEG_L1, LEG_L2, f.lLegBend || -1);
-    lLeg = fk2Bone(lHip[0], lHip[1], a1, a2, LEG_L1, LEG_L2);
-    if (Math.hypot(f.lPinX - lHip[0], f.lPinY - lHip[1]) <= MAX_LEG + 0.3) {
-      lLeg.end = [f.lPinX, f.lPinY]; // Lock precisely when physically reachable!
+    const [a1, a2] = solve2BoneIK(lHip[0], lHip[1], f.lPinX, f.lPinY, LL, LL, f.lLegBend || -1);
+    lLeg = fk2Bone(lHip[0], lHip[1], a1, a2, LL, LL);
+    if (Math.hypot(f.lPinX - lHip[0], f.lPinY - lHip[1]) <= LL * 2 + 0.3) {
+      lLeg.end = [f.lPinX, f.lPinY];
     }
   } else {
-    lLeg = fk2Bone(lHip[0], lHip[1], f.lla1, f.lla2, LEG_L1, LEG_L2);
+    lLeg = fk2Bone(lHip[0], lHip[1], f.lla1, f.lla2, LL, LL);
   }
   return { pelvis, torso, head, bag, lean, rArm, lArm, rLeg, lLeg };
 }
@@ -409,7 +423,7 @@ function blitTorsoShear(buf, part, dstX, dstY, lean = 0) {
   for (let y = 0; y < h; y++) {
     const dy = y0 + y; if (dy < 0 || dy >= 64) continue;
     // Bottom (shorts, y >= h-6) stays 0; upper chest/shoulders shear smoothly toward `lean`!
-    const t = Math.max(0, Math.min(1, (h - 5 - y) / Math.max(1, h - 6)));
+    const t = Math.max(0, Math.min(1, (h - 2 - y) / Math.max(1, h - 3)));
     const rowShift = Math.round(t * lean);
     for (let x = 0; x < w; x++) {
       const dx = x0 + x + rowShift; if (dx < 0 || dx >= 64) continue;
@@ -468,10 +482,10 @@ function blitPart(buf, part, dstX, dstY, angleDeg = 0) {
 // Draw a clean 2-bone bent arm (shoulder -> elbow -> hand) with thick 3px sweatshirt sleeve,
 // FIXED 2x2 fist stamp, crisp 1px outline ONLY around procedural arm pixels (NEVER thickening head/torso/boots!),
 // and subtle forearm seam so arm NEVER melts invisibly into the torso in idle pose!
-function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline = true) {
+function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline = true, armR = ARM_R) {
   const [sx, sy] = bone.root, [ex, ey] = bone.mid, [hx, hy] = bone.end;
   const fill = new Uint8Array(64 * 64); // 1=shirt, 2=shirt_d, 3=skin, 4=skin_d
-  const sleeveR = 1.62;
+  const sleeveR = armR;
   const fdx = hx - ex, fdy = hy - ey, flen = Math.hypot(fdx, fdy) || 1;
   const cuffX = hx - (fdx / flen) * 1.1, cuffY = hy - (fdy / flen) * 1.1;
 
@@ -479,27 +493,42 @@ function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline =
     for (let x = 1; x < 63; x++) {
       const [d1, t1] = segDist(x, y, sx, sy, ex, ey);
       const [d2, t2] = segDist(x, y, ex, ey, cuffX, cuffY);
-      if (Math.min(d1, d2) <= sleeveR) {
-        if (shaded) {
-          fill[y*64+x] = 2;
-        } else {
-          const cy = (d1 <= d2) ? (sy + t1*(ey - sy)) : (ey + t2*(cuffY - ey));
-          fill[y*64+x] = (y - cy > 0.35) ? 2 : 1;
-        }
+      const sleeveR1 = sleeveR * (0.90 + 0.10 * t1); // Smooth rounded shoulder taper
+      const sleeveR2 = sleeveR + 0.08 * t2;          // Subtle overfit sweatshirt cuff
+      const hit1 = d1 <= sleeveR1;
+      const hit2 = d2 <= sleeveR2;
+      if (hit1 || hit2) {
+        const use1 = hit1 && (!hit2 || d1 <= d2);
+        const cy = use1 ? (sy + t1*(ey - sy)) : (ey + t2*(cuffY - ey));
+        const curR = use1 ? sleeveR1 : sleeveR2;
+        fill[y*64+x] = (y - cy > curR * 0.35) ? 2 : 1;
       }
     }
   }
   // Stamp FIXED 2x2 cute fist centered around (hx, hy) -> 100% consistent at every angle!
-  const fx = Math.floor(hx), fy = Math.floor(hy);
+  const fx = Math.round(hx - 0.5), fy = Math.round(hy - 0.5);
   const fistPts = [
-    [fx, fy, shaded ? 4 : 3],
-    [fx + 1, fy, shaded ? 4 : 3],
-    [fx, fy + 1, shaded ? 4 : 3],
+    [fx, fy, 3],
+    [fx + 1, fy, 4],
+    [fx, fy + 1, 3],
     [fx + 1, fy + 1, 4],
   ];
   for (const [px, py, val] of fistPts) {
     if (px >= 1 && px < 63 && py >= 1 && py < 63) fill[py*64 + px] = val;
   }
+  // Crisp 1px cuff line separating sleeve (1,2) and hand (3,4) at any angle!
+  const cuffClear = [];
+  for (let y = 1; y < 63; y++) {
+    for (let x = 1; x < 63; x++) {
+      const v = fill[y*64+x];
+      if (v === 1 || v === 2) {
+        if (fill[(y-1)*64+x] >= 3 || fill[(y+1)*64+x] >= 3 || fill[y*64+x-1] >= 3 || fill[y*64+x+1] >= 3) {
+          cuffClear.push(y*64+x);
+        }
+      }
+    }
+  }
+  for (const idx of cuffClear) fill[idx] = 0;
 
   // Paint arm interior
   for (let y = 1; y < 63; y++) {
@@ -511,11 +540,6 @@ function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline =
       buf[di] = col[0]; buf[di+1] = col[1]; buf[di+2] = col[2]; buf[di+3] = 255;
     }
   }
-  // Draw crisp 1px outline ONLY around this procedural arm (never thickens pre-outlined parts!):
-  // - Outside silhouette (transparent pixel): always #482d26
-  // - Overlapping torso/body beyond shoulder (> 2.3px from shoulder):
-  //   * crossBody=true or hand area: #482d26 crisp separation
-  //   * normal arm beside torso (e.g. idle): #482d26 on cuff/hand & #c7b89e/#482d26 subtle seam so arm stands out cleanly!
   if (useOutline) {
     for (let y = 1; y < 63; y++) {
       for (let x = 1; x < 63; x++) {
@@ -526,11 +550,10 @@ function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline =
         const isTransparent = (buf[di+3] === 0);
         const distSh = Math.hypot(x - sx, y - sy);
         const nearHand = (nU >= 3 || nD >= 3 || nL >= 3 || nR >= 3);
-        if (isTransparent || nearHand || (crossBody && distSh > 2.4)) {
+        if (isTransparent || nearHand || (crossBody && distSh > sleeveR + 0.9)) {
           buf[di] = COL.OUT[0]; buf[di+1] = COL.OUT[1]; buf[di+2] = COL.OUT[2]; buf[di+3] = 255;
-        } else if (distSh > 2.6) {
-          // Arm resting beside torso: crisp seam so sleeve NEVER melts into sweatshirt!
-          buf[di] = COL.OUT[0]; buf[di+1] = COL.OUT[1]; buf[di+2] = COL.OUT[2]; buf[di+3] = 255;
+        } else if (distSh > sleeveR + 1.35) {
+          buf[di] = COL.SHIRT_D[0]; buf[di+1] = COL.SHIRT_D[1]; buf[di+2] = COL.SHIRT_D[2]; buf[di+3] = 255;
         }
       }
     }
@@ -539,40 +562,93 @@ function draw2BoneArm(buf, bone, shaded = false, crossBody = false, useOutline =
 
 // Draw a 2-bone bent leg (hip -> knee -> ankle) + HORIZONTAL original boot!
 // ALWAYS draws crisp 1px outline around thigh/shin EVEN when overlapping the other leg!
-function draw2BoneLeg(buf, bone, bootPart, useOutline = true) {
+function draw2BoneLeg(buf, bone, bootPart, useOutline = true, isBackLeg = false, bootAngle = 0) {
   const [hx, hy] = bone.root, [kx, ky] = bone.mid, [ax, ay] = bone.end;
-  const fill = new Uint8Array(64 * 64);
+  const dxT = kx - hx;
+  const baseCuffY = hy + 0.35 * Math.max(0.5, ky - hy);
+  const cxT = hx + 0.35 * dxT;
+  // Per-column diagonal cuff slope when thigh tilts (>0.7px): perpendicular to thigh angle, ZERO 4-9-4 artifacts!
+  const slope = (dxT < -0.7) ? 0.35 : ((dxT > 0.7) ? -0.35 : 0.0);
+  const cuffYAt = x => Math.round(baseCuffY + slope * (x - cxT));
+  const fillSkin = new Uint8Array(64 * 64);
+  const fillShorts = new Uint8Array(64 * 64);
+
   for (let y = 1; y < 63; y++) {
     for (let x = 1; x < 63; x++) {
-      const [d1, t1] = segDist(x, y, hx, hy, kx, ky);
-      const [d2]     = segDist(x, y, kx, ky, ax, ay);
-      if (Math.min(d1, d2) <= 1.38) {
-        fill[y*64+x] = (d1 <= d2 && t1 < 0.45) ? 2 : 1;
+      const cy = cuffYAt(x);
+      const [d1] = segDist(x, y, hx, hy, kx, ky);
+      const [d2] = segDist(x, y, kx, ky, ax, ay);
+      if (y >= Math.round(hy - 0.5) && y < cy && d1 <= 1.85) {
+        fillShorts[y*64+x] = 1;
+      } else if (y >= cy && Math.min(d1, d2) <= 1.38) {
+        fillSkin[y*64+x] = (y === cy + 1) ? 2 : 1;
       }
     }
   }
-  // 1. Outline FIRST (overwrites even overlapping back leg -> crisp leg separation!)
+  for (let y = 2; y < 62; y++) {
+    let first = -1, last = -1, cnt = 0;
+    for (let x = 1; x < 63; x++) {
+      if (fillSkin[y*64+x] > 0) { if (first < 0) first = x; last = x; cnt++; }
+    }
+    if (cnt > 3) {
+      if (!fillSkin[(y-1)*64+first] && !fillSkin[(y+1)*64+first]) fillSkin[y*64+first] = 0;
+      if (!fillSkin[(y-1)*64+last]  && !fillSkin[(y+1)*64+last])  fillSkin[y*64+last]  = 0;
+    }
+  }
+  for (let y = 2; y < 62; y++) {
+    if (y <= Math.round(baseCuffY)) continue;
+    for (let x = 2; x < 62; x++) {
+      if (fillSkin[y*64+x] === 0) {
+        if ((fillSkin[(y-1)*64+x] && fillSkin[(y+1)*64+x]) || (fillSkin[y*64+x-1] && fillSkin[y*64+x+1])) {
+          fillSkin[y*64+x] = 1;
+        }
+      }
+    }
+  }
   if (useOutline) {
     for (let y = 1; y < 63; y++) {
       for (let x = 1; x < 63; x++) {
-        if (fill[y*64+x] === 0 && (fill[(y-1)*64+x] || fill[(y+1)*64+x] || fill[y*64+x-1] || fill[y*64+x+1])) {
+        if (fillSkin[y*64+x] === 0 && (fillSkin[(y-1)*64+x] || fillSkin[(y+1)*64+x] || fillSkin[y*64+x-1] || fillSkin[y*64+x+1])) {
           const di = (y*64 + x)*4;
           buf[di] = COL.OUT[0]; buf[di+1] = COL.OUT[1]; buf[di+2] = COL.OUT[2]; buf[di+3] = 255;
         }
       }
     }
   }
-  // 2. Interior thigh/shin pixels
+  const thighCol = COL.THIGH_S;
+  const skinCol  = isBackLeg ? COL.SKIN_D  : COL.SKIN;
   for (let y = 1; y < 63; y++) {
     for (let x = 1; x < 63; x++) {
-      const v = fill[y*64+x]; if (!v) continue;
-      const col = v === 2 ? COL.THIGH_S : COL.SKIN;
+      const v = fillSkin[y*64+x]; if (!v) continue;
+      const col = v === 2 ? thighCol : skinCol;
       const di = (y*64 + x)*4;
       buf[di] = col[0]; buf[di+1] = col[1]; buf[di+2] = col[2]; buf[di+3] = 255;
     }
   }
-  // 3. Original boot (already has its own crisp 1px outline -> zero double-outline!)
-  blitPart(buf, bootPart, Math.round(ax), Math.round(ay), 0);
+  if (useOutline) {
+    for (let y = 1; y < 63; y++) {
+      if (y < Math.round(hy - 0.5)) continue;
+      for (let x = 1; x < 63; x++) {
+        if (fillShorts[y*64+x] !== 0) continue;
+        // Bottom cuff is strictly the 1px vertical neighbor below fillShorts (fillShorts[(y-1)*64+x]); side outline only where fillSkin is 0!
+        const isCuffBottom = fillShorts[(y-1)*64+x] > 0;
+        const isSideEdge = (fillShorts[y*64+x-1] || fillShorts[y*64+x+1] || fillShorts[(y+1)*64+x]) && (fillSkin[y*64+x] === 0);
+        if (isCuffBottom || isSideEdge) {
+          const di = (y*64 + x)*4;
+          buf[di] = COL.OUT[0]; buf[di+1] = COL.OUT[1]; buf[di+2] = COL.OUT[2]; buf[di+3] = 255;
+        }
+      }
+    }
+  }
+  const pantsCol = isBackLeg ? COL.PANTS_D : COL.PANTS;
+  for (let y = 1; y < 63; y++) {
+    for (let x = 1; x < 63; x++) {
+      if (!fillShorts[y*64+x]) continue;
+      const di = (y*64 + x)*4;
+      buf[di] = pantsCol[0]; buf[di+1] = pantsCol[1]; buf[di+2] = pantsCol[2]; buf[di+3] = 255;
+    }
+  }
+  blitPart(buf, bootPart, Math.round(ax), Math.round(ay), bootAngle);
 }
 
 function renderFrame64(s, f, includeSword = true, useOutline = true) {
@@ -582,27 +658,29 @@ function renderFrame64(s, f, includeSword = true, useOutline = true) {
   const hx = Math.round(K.rArm.end[0]), hy = Math.round(K.rArm.end[1]);
 
   if (includeSword && f.sword && f.sBehind) blitPart(buf, IMGS.sword, hx, hy, f.sa);
-  if (f.rBehind) draw2BoneArm(buf, K.rArm, true, false, useOutline);
-  if (f.lBehind) draw2BoneArm(buf, K.lArm, true, false, useOutline);
+  const effRBehind = f.rBehind && !((s === 'front' && f.ra1 > 12) || (s === 'back' && f.ra1 < -12));
+  const farArmR  = Math.max(1.25, ARM_R - 0.35);
+  const nearArmR = ARM_R;
+  if (effRBehind) draw2BoneArm(buf, K.rArm, true, false, useOutline, farArmR);
+  if (f.lBehind) draw2BoneArm(buf, K.lArm, true, false, useOutline, nearArmR);
 
   // Legs (back leg first, front leg second with crisp overlapping border!)
-  const rightInFront = (s === 'front') ? !f.swapLegs : !!f.swapLegs;
-  if (rightInFront) {
-    draw2BoneLeg(buf, K.lLeg, P.boot_l, useOutline);
-    draw2BoneLeg(buf, K.rLeg, P.boot_r, useOutline);
+  // By default (!f.swapLegs), rLeg (far leg, y=59) is behind & shaded (isBackLeg=true), and lLeg (near leg, y=61) is in front & bright (isBackLeg=false)!
+  if (f.swapLegs) {
+    draw2BoneLeg(buf, K.lLeg, P.boot_l, useOutline, true,  f.lba || 0);
+    draw2BoneLeg(buf, K.rLeg, P.boot_r, useOutline, false, f.rba || 0);
   } else {
-    draw2BoneLeg(buf, K.rLeg, P.boot_r, useOutline);
-    draw2BoneLeg(buf, K.lLeg, P.boot_l, useOutline);
+    draw2BoneLeg(buf, K.rLeg, P.boot_r, useOutline, true,  f.rba || 0);
+    draw2BoneLeg(buf, K.lLeg, P.boot_l, useOutline, false, f.lba || 0);
   }
 
-  // Original pre-outlined parts (Torso -> Bag -> Head): NEVER get a 2nd outer outline!
+  // Original pre-outlined parts (Torso -> Head): NEVER get a 2nd outer outline!
   blitTorsoShear(buf, P.torso, K.torso[0], K.torso[1], K.lean);
-  blitPart(buf, P.bag, K.bag[0], K.bag[1], 0);
   blitPart(buf, (s === 'front' && f.hurt) ? P.head_hurt : P.head, K.head[0], K.head[1], 0);
 
   // Front arms (procedural 1px outline ONLY on arm pixels!)
-  if (!f.lBehind) draw2BoneArm(buf, K.lArm, false, f.lCross, useOutline);
-  if (!f.rBehind) draw2BoneArm(buf, K.rArm, false, f.rCross, useOutline);
+  if (!f.lBehind) draw2BoneArm(buf, K.lArm, false, f.lCross, useOutline, nearArmR);
+  if (!effRBehind) draw2BoneArm(buf, K.rArm, false, f.rCross, useOutline, farArmR);
 
   if (includeSword && f.sword && !f.sBehind) blitPart(buf, IMGS.sword, hx, hy, f.sa);
 
@@ -624,7 +702,7 @@ function render() {
     // Isometric / 3/4 view SLANTED floor tracks (parallel diagonal lines matching 3/4 depth)!
     // In front view (facing down-left): moving forward (-X) shifts floor slightly DOWN (+Y) by ~1px per 6px!
     const slope = (side === 'front') ? -0.18 : 0.14;
-    const nearY = (side === 'front') ? 61 : 60; // through (33, 61) / (29, 60)
+    const nearY = 61; // through (33, 61) / (29, 60)
     const farY  = 59;                           // through (27, 59) / (35, 59)
     const refNearX = (side === 'front') ? 33 : 29;
     const refFarX  = (side === 'front') ? 27 : 35;
@@ -648,7 +726,7 @@ function render() {
     g.fillStyle = 'rgba(255, 160, 210, 0.9)';
     g.fillText('먼발 기준선 (y=59)', 6, (farY - 2) * SCALE);
     g.fillStyle = 'rgba(255, 120, 120, 0.95)';
-    g.fillText(side === 'front' ? '가까운발 기준선 (y=61)' : '가까운발 기준선 (y=60)', 6, (nearY + 1) * SCALE + 4);
+    g.fillText('가까운발 기준선 (y=61)', 6, (nearY + 1) * SCALE + 4);
     // Center X=32
     g.strokeStyle = 'rgba(100, 185, 255, 0.35)'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(32*SCALE, 0); g.lineTo(32*SCALE, 512); g.stroke();
@@ -708,11 +786,18 @@ function render() {
     line(K.lLeg.root, K.lLeg.mid, '#5ef2d6'); line(K.lLeg.mid, K.lLeg.end, '#5ef2d6');
 
     // ALL joint dots are clickable & draggable! (small = elbow/knee, large = hand/foot/head/body/bag)
+    const rootRing = (p, col) => {
+      const [x, y] = toPx(p);
+      g.beginPath(); g.arc(x, y, 6.5, 0, Math.PI*2);
+      g.lineWidth = 3; g.strokeStyle = col; g.stroke();
+    };
+    rootRing(K.rArm.root, '#33dd66'); rootRing(K.lArm.root, '#3399ff');
+    rootRing(K.rLeg.root, '#ff7eb6'); rootRing(K.lLeg.root, '#5ef2d6');
     dot(K.rArm.mid, '#b5ffc9', 5, 'rElbow'); dot(K.lArm.mid, '#b8ddff', 5, 'lElbow');
     dot(K.rLeg.mid, '#ffc2dc', 5, 'rKnee');  dot(K.lLeg.mid, '#b8fff1', 5, 'lKnee');
     dot(K.head, '#ffffff', 5, 'head');
     dot(K.torso, '#ffe066', 6, 'body');
-    dot(K.bag, '#ff9f43', 5, 'bag');
+    // bag removed in 47px v3
     dot(K.rArm.end, '#44ff77', 7, 'rArm');
     dot(K.lArm.end, '#55aaff', 7, 'lArm');
     dot(K.rLeg.end, f.rPin ? '#ff3366' : '#ff66aa', 7, 'rLeg');
@@ -750,7 +835,7 @@ function renderTimelineThumbs() {
 
 function syncUI() {
   const f = frames[curIdx];
-  for (const k of ['bx','by','lean','hx','hy','bagx','bagy','ra1','ra2','la1','la2','rla1','rla2','lla1','lla2','sa']) {
+  for (const k of ['bx','by','lean','hx','hy','ra1','ra2','la1','la2','rla1','rla2','lla1','lla2','rba','lba','sa']) {
     const val = f[k] ?? 0;
     const sl = document.getElementById('s_' + k);
     const ni = document.getElementById('n_' + k);
@@ -791,7 +876,21 @@ function snapFeetToGround() {
   toast('양발 61번 줄 바닥에 고정 완료!');
 }
 
+function autoUnpinForKey(k) {
+  const f = frames[curIdx];
+  if ((k === 'rla1' || k === 'rla2') && f.rPin) {
+    f.rPin = false;
+    const cb = document.getElementById('c_rpin');
+    if (cb) cb.checked = false;
+  } else if ((k === 'lla1' || k === 'lla2') && f.lPin) {
+    f.lPin = false;
+    const cb = document.getElementById('c_lpin');
+    if (cb) cb.checked = false;
+  }
+}
+
 function setF(k, v) {
+  autoUnpinForKey(k);
   frames[curIdx][k] = v;
   const ni = document.getElementById('n_' + k);
   if (ni && document.activeElement !== ni) ni.value = v;
@@ -807,6 +906,7 @@ function setNum(k, inputEl) {
   const min = parseInt(inputEl.min, 10), max = parseInt(inputEl.max, 10);
   if (!isNaN(min)) v = Math.max(min, v);
   if (!isNaN(max)) v = Math.min(max, v);
+  autoUnpinForKey(k);
   frames[curIdx][k] = v;
   const sl = document.getElementById('s_' + k);
   if (sl) sl.value = v;
@@ -828,10 +928,33 @@ function flipLegBend(which) {
 }
 
 function setSide(s) {
+  const prevSide = side;
   side = s;
+  if (prevSide !== s) {
+    const oldG = groundAnkles(prevSide);
+    const newG = groundAnkles(s);
+    for (const f of frames) {
+      // Mirror foot pin coordinates symmetrically between front (-X) and back (+X)
+      const dxr = f.rPinX - oldG.rx, dyr = f.rPinY - oldG.ry;
+      const dxl = f.lPinX - oldG.lx, dyl = f.lPinY - oldG.ly;
+      f.rPinX = Math.round(newG.rx - dxr);
+      f.rPinY = Math.round(newG.ry + dyr);
+      f.lPinX = Math.round(newG.lx - dxl);
+      f.lPinY = Math.round(newG.ly + dyl);
+      // Mirror leg & arm angles and knee bend directions for clean front<->back parity
+      f.rla1 = -f.rla1; f.rla2 = -f.rla2;
+      f.lla1 = -f.lla1; f.lla2 = -f.lla2;
+      f.rba = -(f.rba || 0); f.lba = -(f.lba || 0);
+      f.rLegBend = (f.rLegBend || -1) * -1;
+      f.lLegBend = (f.lLegBend || -1) * -1;
+      f.ra1 = -f.ra1; f.ra2 = -f.ra2;
+      f.la1 = -f.la1; f.la2 = -f.la2;
+      f.bx = -f.bx; f.lean = -f.lean; f.hx = -f.hx;
+    }
+  }
   document.getElementById('btnFront').classList.toggle('active', s === 'front');
   document.getElementById('btnBack').classList.toggle('active', s === 'back');
-  render();
+  syncUI(); render();
 }
 
 function togglePlay() {
@@ -864,7 +987,6 @@ function pickJoint(mx, my) {
     ['rKnee',  K.rLeg.mid[0], K.rLeg.mid[1], 2.8],
     ['lKnee',  K.lLeg.mid[0], K.lLeg.mid[1], 2.8],
     ['head',   K.head[0],     K.head[1],     3.0],
-    ['bag',    K.bag[0],      K.bag[1],      3.0],
     ['body',   K.torso[0],    K.torso[1],    3.2],
   ];
   let best = null, bd = 999;
@@ -925,26 +1047,27 @@ window.addEventListener('pointermove', e => {
     f.la1 = na1;
     f.la2 = Math.max(-150, Math.min(150, snapDeg(wrapDeg(world2 - na1))));
   } else if (dragTarget === 'rLeg') {
+    const RL = 4.25;
     if (f.rPin) {
-      // Clamp pinned foot within physical leg reach from hip so leg NEVER stretches!
       const dx = mx - K.rLeg.root[0], dy = my - K.rLeg.root[1];
-      const d = Math.hypot(dx, dy), maxR = LEG_L1 + LEG_L2;
+      const d = Math.hypot(dx, dy), maxR = RL * 2;
       const sc = d > maxR ? maxR / d : 1;
       f.rPinX = Math.round(K.rLeg.root[0] + dx * sc);
       f.rPinY = Math.round(K.rLeg.root[1] + dy * sc);
     } else {
-      const [a1, a2] = solve2BoneIK(K.rLeg.root[0], K.rLeg.root[1], mx, my, LEG_L1, LEG_L2, f.rLegBend);
+      const [a1, a2] = solve2BoneIK(K.rLeg.root[0], K.rLeg.root[1], mx, my, RL, RL, f.rLegBend);
       f.rla1 = Math.max(-120, Math.min(120, snapDeg(a1))); f.rla2 = Math.max(-135, Math.min(135, snapDeg(a2)));
     }
   } else if (dragTarget === 'lLeg') {
+    const LL = 4.75;
     if (f.lPin) {
       const dx = mx - K.lLeg.root[0], dy = my - K.lLeg.root[1];
-      const d = Math.hypot(dx, dy), maxR = LEG_L1 + LEG_L2;
+      const d = Math.hypot(dx, dy), maxR = LL * 2;
       const sc = d > maxR ? maxR / d : 1;
       f.lPinX = Math.round(K.lLeg.root[0] + dx * sc);
       f.lPinY = Math.round(K.lLeg.root[1] + dy * sc);
     } else {
-      const [a1, a2] = solve2BoneIK(K.lLeg.root[0], K.lLeg.root[1], mx, my, LEG_L1, LEG_L2, f.lLegBend);
+      const [a1, a2] = solve2BoneIK(K.lLeg.root[0], K.lLeg.root[1], mx, my, LL, LL, f.lLegBend);
       f.lla1 = Math.max(-120, Math.min(120, snapDeg(a1))); f.lla2 = Math.max(-135, Math.min(135, snapDeg(a2)));
     }
   } else if (dragTarget === 'rKnee') {
@@ -960,16 +1083,12 @@ window.addEventListener('pointermove', e => {
     f.lla1 = na1;
     f.lla2 = Math.max(-135, Math.min(135, snapDeg(wrapDeg(world2 - na1))));
   } else if (dragTarget === 'head') {
-    const baseY = (side === 'front' ? 35 : 36) + f.by + (Math.abs(f.lean || 0) >= 2 ? 1 : 0);
-    f.hx = Math.max(-3, Math.min(3, Math.round(mx - (32 + f.bx + (f.lean || 0)))));
-    f.hy = Math.max(-2, Math.min(3, Math.round(my - baseY)));
+    const baseY = (side === 'front' ? 33 : 34) + f.by + (Math.abs(f.lean || 0) >= 2 ? 1 : 0);
+    f.hx = Math.max(-1, Math.min(1, Math.round(mx - (32 + f.bx + (f.lean || 0)))));
+    f.hy = Math.max(0, Math.min(2, Math.round(my - baseY)));
   } else if (dragTarget === 'body') {
     f.bx = Math.max(-5, Math.min(5, Math.round(mx - 31)));
-    f.by = Math.max(-5, Math.min(4, Math.round(my - 44)));
-  } else if (dragTarget === 'bag') {
-    const base = side === 'front' ? 36 : 26;
-    f.bagx = Math.max(-4, Math.min(4, Math.round(mx - (base + f.bx))));
-    f.bagy = Math.max(-3, Math.min(3, Math.round(my - (48 + f.by))));
+    f.by = Math.max(-5, Math.min(4, Math.round(my - 42)));
   }
   syncUI(); render();
 });
@@ -990,24 +1109,20 @@ function loadPreset(name) {
     lPin: true, lPinX: g.lx + dxl, lPinY: g.ly,
   });
 
+  const dir = (side === 'front') ? 1 : -1;
   if (name === 'idle') {
     // Feet stay 100% locked on y=61 while upper body breathes down 1px!
     frames = [
       { ...d(), ...pinned(), by: 0, ra1: 0,  ra2: 0,   la1: 0,   la2: 0 },
-      { ...d(), ...pinned(), by: 1, ra1: 15, ra2: -15, la1: -15, la2: 15 },
+      { ...d(), ...pinned(), by: 1, ra1: 15 * dir, ra2: -15 * dir, la1: -15 * dir, la2: 15 * dir },
     ];
   } else if (name === 'walk') {
-    // True alternating 4-beat stride! (+angle = forward/-X, -angle = backward/+X)
-    // Supporting foot stays LOCKED on ground (never floats even at by=-1 thanks to LEG=6.2px!)
-    // f0: R-foot forward planted, L-foot trailing BACK (-30°)
-    // f1: R-foot passing under body (planted), L-foot swinging forward
-    // f2: L-foot forward planted, R-foot trailing BACK (-30°)
-    // f3: L-foot passing under body (planted), R-foot swinging forward
+    // True alternating 4-beat stride! Mirrors cleanly for front (-X) and back (+X)!
     frames = [
-      { ...d(), by: 0,  ra1: -30, ra2: -15, la1: 30,  la2: -15, rPin: true, rPinX: g.rx - 2, rPinY: g.ry,     lPin: false, lla1: -30, lla2: -15 },
-      { ...d(), by: -1, ra1: 0,   ra2: -15, la1: 0,   la2: -15, rPin: true, rPinX: g.rx,     rPinY: g.ry,     lPin: false, lla1: 15,  lla2: -45 },
-      { ...d(), by: 0,  ra1: 30,  ra2: -15, la1: -30, la2: -15, lPin: true, lPinX: g.lx - 2, lPinY: g.ly,     rPin: false, rla1: -30, rla2: -15 },
-      { ...d(), by: -1, ra1: 0,   ra2: -15, la1: 0,   la2: -15, lPin: true, lPinX: g.lx,     lPinY: g.ly,     rPin: false, rla1: 15,  rla2: -45 },
+      { ...d(), by: 0,  ra1: -30 * dir, ra2: -15 * dir, la1: 30 * dir,  la2: -15 * dir, rPin: true, rPinX: g.rx - 2 * dir, rPinY: g.ry, lPin: false, lla1: -30 * dir, lla2: -15 * dir },
+      { ...d(), by: -1, ra1: 0,         ra2: -15 * dir, la1: 0,         la2: -15 * dir, rPin: true, rPinX: g.rx,           rPinY: g.ry, lPin: false, lla1: 15 * dir,  lla2: -45 * dir },
+      { ...d(), by: 0,  ra1: 30 * dir,  ra2: -15 * dir, la1: -30 * dir, la2: -15 * dir, lPin: true, lPinX: g.lx - 2 * dir, lPinY: g.ly, rPin: false, rla1: -30 * dir, rla2: -15 * dir },
+      { ...d(), by: -1, ra1: 0,         ra2: -15 * dir, la1: 0,         la2: -15 * dir, lPin: true, lPinX: g.lx,           lPinY: g.ly, rPin: false, rla1: 15 * dir,  rla2: -45 * dir },
     ];
   } else if (name === 'jump') {
     // Airborne -> both foot pins OFF! (Game engine computes actual jump arc p.z!)
@@ -1023,11 +1138,11 @@ function loadPreset(name) {
       ];
     }
   } else if (name === 'land') {
-    frames = [{ ...d(), ...pinned(-1, 1), by: 2, ra1: 30, ra2: -30, la1: -30, la2: 30 }];
+    frames = [{ ...d(), ...pinned(-1 * dir, 1 * dir), by: 2, ra1: 30 * dir, ra2: -30 * dir, la1: -30 * dir, la2: 30 * dir }];
   } else if (name === 'hurt') {
     frames = [
-      { ...d(), ...pinned(0, 1), bx: 1, by: 1, lean: 1, hurt: true, ra1: 60, ra2: -30, la1: -60, la2: 30 },
-      { ...d(), ...pinned(0, 1), bx: 0, by: 1, lean: 0, hurt: true, ra1: 45, ra2: -30, la1: -45, la2: 30 },
+      { ...d(), ...pinned(0, 1 * dir), bx: 1 * dir, by: 1, lean: 1 * dir, hurt: true, ra1: 60 * dir, ra2: -30 * dir, la1: -60 * dir, la2: 30 * dir },
+      { ...d(), ...pinned(0, 1 * dir), bx: 0,       by: 1, lean: 0,       hurt: true, ra1: 45 * dir, ra2: -30 * dir, la1: -45 * dir, la2: 30 * dir },
     ];
   } else if (name === 'slash1') {
     if (side === 'front') {
