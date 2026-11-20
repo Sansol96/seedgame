@@ -768,36 +768,66 @@ function render() {
     }
   }
   if (document.getElementById('chkGrid').checked) {
-    // Isometric / 3/4 view SLANTED floor tracks (parallel diagonal lines matching 3/4 depth)!
-    // In front view (facing down-left): moving forward (-X) shifts floor slightly DOWN (+Y) by ~1px per 6px!
-    const slope = (side === 'front') ? -0.18 : (side === 'front_r') ? 0.18 : (side === 'back') ? 0.14 : -0.14;
-    const nearY = 61;
-    const farY  = 59;
-    const refNearX = (side === 'front') ? 33 : (side === 'front_r') ? 30 : (side === 'back') ? 29 : 34;
-    const refFarX  = (side === 'front') ? 27 : (side === 'front_r') ? 36 : (side === 'back') ? 35 : 28;
+    // True 3/4 Isometric (2:1, slope = ±0.5) 4-Direction Floor Grid & Foot Tracks!
+    // front (↙): forward=(-X,+Y) slope=-0.5 | front_r (↘): forward=(+X,+Y) slope=+0.5
+    // back  (↖): forward=(-X,-Y) slope=+0.5 | back_r  (↗): forward=(+X,-Y) slope=-0.5
+    const isoCfg = {
+      front:   { fwdSlope: -0.5, crossSlope:  0.5, nearX: 33, farX: 27, dirLabel: '↙ 남서(앞-좌) 3/4', dx: -1, dy:  0.5 },
+      front_r: { fwdSlope:  0.5, crossSlope: -0.5, nearX: 30, farX: 36, dirLabel: '↘ 남동(앞-우) 3/4', dx:  1, dy:  0.5 },
+      back:    { fwdSlope:  0.5, crossSlope: -0.5, nearX: 29, farX: 35, dirLabel: '↖ 북서(뒤-좌) 3/4', dx: -1, dy: -0.5 },
+      back_r:  { fwdSlope: -0.5, crossSlope:  0.5, nearX: 34, farX: 28, dirLabel: '↗ 북동(뒤-우) 3/4', dx:  1, dy: -0.5 },
+    }[side];
+    const nearY = 61, farY = 59;
+    const cx = (isoCfg.nearX + isoCfg.farX) / 2, cy = 60;
 
-    const drawIsoLine = (rx, ry, col, dashed) => {
-      const yL = ry + (0 - rx) * slope;
-      const yR = ry + (64 - rx) * slope;
+    const drawSlopedLine = (rx, ry, slp, col, lw, dashed) => {
+      const yL = ry + (0 - rx) * slp;
+      const yR = ry + (64 - rx) * slp;
       g.save();
       if (dashed) g.setLineDash([6, 4]);
-      g.strokeStyle = col; g.lineWidth = 2;
+      g.strokeStyle = col; g.lineWidth = lw;
       g.beginPath();
       g.moveTo(0, yL * SCALE + SCALE/2);
       g.lineTo(512, yR * SCALE + SCALE/2);
       g.stroke();
       g.restore();
     };
-    drawIsoLine(refFarX, farY, 'rgba(255, 130, 190, 0.72)', true);
-    drawIsoLine(refNearX, nearY, 'rgba(255, 90, 90, 0.80)', false);
+
+    // 1) Subtle 3/4 Isometric Diamond Floor Grid around feet
+    for (let k = -4; k <= 4; k++) {
+      drawSlopedLine(cx + k * 6, cy,  0.5, 'rgba(130, 220, 190, 0.16)', 1, false);
+      drawSlopedLine(cx + k * 6, cy, -0.5, 'rgba(130, 220, 190, 0.16)', 1, false);
+    }
+    // 2) Stance cross-axis (perpendicular to forward step, connecting left/right feet)
+    drawSlopedLine(cx, cy, isoCfg.crossSlope, 'rgba(255, 225, 110, 0.45)', 1.5, true);
+    // 3) Far-foot & Near-foot 3/4 forward step tracks (2:1 exact diagonal!)
+    drawSlopedLine(isoCfg.farX,  farY,  isoCfg.fwdSlope, 'rgba(255, 130, 200, 0.80)', 2, true);
+    drawSlopedLine(isoCfg.nearX, nearY, isoCfg.fwdSlope, 'rgba(255, 85,  85,  0.88)', 2.2, false);
+
+    // 4) Forward step direction arrow on floor
+    const ax0 = cx * SCALE + SCALE/2, ay0 = cy * SCALE + SCALE/2;
+    const ax1 = (cx + isoCfg.dx * 12) * SCALE + SCALE/2;
+    const ay1 = (cy + isoCfg.dy * 12) * SCALE + SCALE/2;
+    const ang = Math.atan2(ay1 - ay0, ax1 - ax0);
+    g.save();
+    g.strokeStyle = 'rgba(125, 240, 160, 0.9)'; g.fillStyle = 'rgba(125, 240, 160, 0.9)'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(ax0, ay0); g.lineTo(ax1, ay1); g.stroke();
+    g.beginPath();
+    g.moveTo(ax1, ay1);
+    g.lineTo(ax1 - 10 * Math.cos(ang - 0.5), ay1 - 10 * Math.sin(ang - 0.5));
+    g.lineTo(ax1 - 10 * Math.cos(ang + 0.5), ay1 - 10 * Math.sin(ang + 0.5));
+    g.closePath(); g.fill();
+    g.restore();
 
     g.font = 'bold 11px monospace';
-    g.fillStyle = 'rgba(255, 160, 210, 0.9)';
-    g.fillText('먼발 기준선 (y=59)', 6, (farY - 2) * SCALE);
-    g.fillStyle = 'rgba(255, 120, 120, 0.95)';
-    g.fillText('가까운발 기준선 (y=61)', 6, (nearY + 1) * SCALE + 4);
+    g.fillStyle = 'rgba(140, 245, 175, 0.95)';
+    g.fillText(isoCfg.dirLabel + '  (2:1 발 트랙)', 8, 16);
+    g.fillStyle = 'rgba(255, 155, 210, 0.92)';
+    g.fillText('--- 먼발 3/4 트랙', 8, 32);
+    g.fillStyle = 'rgba(255, 115, 115, 0.95)';
+    g.fillText('─── 가까운발 3/4 트랙', 8, 46);
     // Center X=32
-    g.strokeStyle = 'rgba(100, 185, 255, 0.35)'; g.lineWidth = 1;
+    g.strokeStyle = 'rgba(100, 185, 255, 0.28)'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(32*SCALE, 0); g.lineTo(32*SCALE, 512); g.stroke();
   }
   if (document.getElementById('chkRope').checked) {
