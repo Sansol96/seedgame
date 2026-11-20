@@ -129,7 +129,7 @@
         <button onclick="loadPreset('jump')">점프 (2f)</button>
         <button onclick="loadPreset('land')">착지 (1f)</button>
         <button onclick="loadPreset('hurt')">피격 (2f)</button>
-        <button onclick="loadPreset('slash1')">베기 1 (4f)</button>
+        <button onclick="loadPreset('slash1')">베기 1 (3f)</button>
         <button onclick="loadPreset('slash2')">베기 2 (4f)</button>
         <button onclick="loadPreset('climb')">밧줄 (2f)</button>
         <button onclick="loadPreset('ladder')">사다리 (2f)</button>
@@ -1147,17 +1147,15 @@ function loadPreset(name) {
   } else if (name === 'slash1') {
     if (side === 'front') {
       frames = [
-        { ...d(), ...pinned(),      bx: -1, by: 0, ra1: 135, ra2: 15,  la1: -15, la2: 30,  bagx: 0,  sword: true, sa: -120 },
-        { ...d(), ...pinned(-2, 1), bx: -1, by: 1, lean: -1, ra1: 45, ra2: -30, la1: -45, la2: -45, bagx: -1, sword: true, sa: 120 },
-        { ...d(), ...pinned(-2, 1), bx: 0,  by: 1, lean: -1, ra1: -15, ra2: -60, rCross: true, la1: -60, la2: -45, bagx: -2, bagy: -1, sword: true, sa: 60 },
-        { ...d(), ...pinned(-1, 1), bx: 0,  by: 1, ra1: 0,   ra2: -45, rCross: true, la1: -15, la2: -15, bagx: -1, sword: true, sa: 75 },
+        { ...d(), bx: 1,  by: 0, lean: 0,  ra1: 165, ra2: 15,  rBehind: false, la1: -45, la2: 30,  lBehind: false, rPin: true,  rPinX: 31, rPinY: 55, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -90,  sBehind: false },
+        { ...d(), bx: -2, by: 0, lean: 0,  ra1: 90,  ra2: 0,   rBehind: false, la1: -75, la2: -15, lBehind: false, rPin: false, rla1: 30,  rla2: -45, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -150, sBehind: false },
+        { ...d(), bx: -5, by: 1, lean: -1, ra1: -30, ra2: -45, rCross: true,   rBehind: false, la1: -90, la2: 0, lBehind: false, rPin: true, rPinX: 20, rPinY: 56, rba: 10, lPin: true, lPinX: 33, lPinY: 57, lba: -10, sword: true, sa: 45, sBehind: false },
       ];
     } else {
       frames = [
-        { ...d(), ...pinned(),      bx: 1,  by: 0, ra1: -135, ra2: -15, la1: 45, la2: 30, bagx: -1, sword: true, sa: -45 },
-        { ...d(), ...pinned(1, -1), bx: -1, by: 1, lean: -1, ra1: 60, ra2: 30, rBehind: true, la1: 15, la2: -30, bagx: 2, bagy: -1, sword: true, sa: 150, sBehind: true },
-        { ...d(), ...pinned(1, -1), bx: -2, by: 1, lean: -1, ra1: 60, ra2: 30, rBehind: true, la1: 0,  la2: -45, lCross: true, bagx: 1, sword: true, sa: 135, sBehind: true },
-        { ...d(), ...pinned(1, -1), bx: -1, by: 1, ra1: 45, ra2: 30, rBehind: true, la1: -15, la2: -30, lCross: true, bagx: 0, sword: true, sa: 135, sBehind: true },
+        { ...d(), bx: -1, by: 0, lean: 0, ra1: -115, ra2: -35, rBehind: true,  la1: 45, la2: -35, lBehind: false, rPin: true,  rPinX: 33, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85, sBehind: true },
+        { ...d(), bx: 2,  by: 0, lean: 0, ra1: -90,  ra2: 0,   rBehind: false, la1: 85, la2: 10,  lBehind: false, rPin: false, rla1: -30, rla2: 45, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -30, sBehind: false },
+        { ...d(), bx: 5,  by: 1, lean: 1, ra1: 55,   ra2: 35,  rBehind: true,  la1: 95, la2: 0,   lBehind: false, rPin: true,  rPinX: 43, rPinY: 57, rba: -10, lPin: true, lPinX: 30, lPinY: 57, lba: 10, sword: true, sa: 150, sBehind: true },
       ];
     }
   } else if (name === 'slash2') {
