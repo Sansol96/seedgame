@@ -106,10 +106,12 @@
 </head>
 <body>
 <header>
-  <h1>🌱 새싹 숲 2단 관절 뼈대 에디터 v2 <span class="badge">팔꿈치·무릎 ㄴ자 굽힘 + 2-Bone IK</span></h1>
+  <h1>🌱 새싹 숲 2단 관절 뼈대 에디터 v3 <span class="badge">4방향 풀지원 · 몸통 회전 · 2-Bone IK</span></h1>
   <div class="toolbar">
-    <button id="btnFront" class="active" onclick="setSide('front')">앞모습</button>
-    <button id="btnBack" onclick="setSide('back')">뒷모습</button>
+    <button id="btnFront" class="active" onclick="setSide('front')">앞-좌 ↙</button>
+    <button id="btnFrontR" onclick="setSide('front_r')">앞-우 ↘</button>
+    <button id="btnBack" onclick="setSide('back')">뒤-좌 ↖</button>
+    <button id="btnBackR" onclick="setSide('back_r')">뒤-우 ↗</button>
     <button onclick="exportSheet(false)" class="primary">📥 빈손 시트 PNG</button>
     <button onclick="exportSheet(true)">⚔️ 검 포함 PNG</button>
     <button onclick="copySpecJson()">📋 손좌표 JSON</button>
@@ -129,7 +131,7 @@
         <button onclick="loadPreset('jump')">점프 (2f)</button>
         <button onclick="loadPreset('land')">착지 (1f)</button>
         <button onclick="loadPreset('hurt')">피격 (2f)</button>
-        <button onclick="loadPreset('slash1')">베기 1 (3f)</button>
+        <button onclick="loadPreset('slash1')">베기 1 (4f)</button>
         <button onclick="loadPreset('slash2')">베기 2 (4f)</button>
         <button onclick="loadPreset('climb')">밧줄 (2f)</button>
         <button onclick="loadPreset('ladder')">사다리 (2f)</button>
@@ -264,15 +266,20 @@ const COL = {
 
 function loadAllImages() {
   const tasks = [];
-  for (const side of ['front', 'back']) {
-    IMGS[side] = {};
-    for (const [k, info] of Object.entries(PARTS_DATA[side])) {
+  for (const s of ['front', 'back']) {
+    IMGS[s] = {};
+    IMGS[s + '_r'] = {};
+    for (const [k, info] of Object.entries(PARTS_DATA[s])) {
       tasks.push(new Promise(res => {
         const im = new Image();
         im.onload = () => {
           const c = document.createElement('canvas'); c.width = info.w; c.height = info.h;
           const g = c.getContext('2d'); g.drawImage(im, 0, 0);
-          IMGS[side][k] = { ...info, data: g.getImageData(0, 0, info.w, info.h) };
+          IMGS[s][k] = { ...info, data: g.getImageData(0, 0, info.w, info.h) };
+          // Auto-generate horizontally mirrored right-facing parts (front_r, back_r)
+          const cf = document.createElement('canvas'); cf.width = info.w; cf.height = info.h;
+          const gf = cf.getContext('2d'); gf.translate(info.w, 0); gf.scale(-1, 1); gf.drawImage(im, 0, 0);
+          IMGS[s + '_r'][k] = { ...info, px: info.w - 1 - info.px, data: gf.getImageData(0, 0, info.w, info.h) };
           res();
         };
         im.src = info.src;
@@ -296,7 +303,7 @@ function loadAllImages() {
 function defaultFrame(s) {
   const curSide = s || (typeof side !== 'undefined' ? side : 'front');
   const g = groundAnkles(curSide);
-  const legBend = curSide === 'front' ? -1 : 1;
+  const legBend = (curSide === 'front' || curSide === 'back_r') ? -1 : 1;
   return {
     bx: 0, by: 0, lean: 0, twist: 0, hx: 0, hy: 0, bagx: 0, bagy: 0, hurt: false,
     // Arms: a1 = upper arm angle (0=down, +clockwise), a2 = elbow bend relative to a1!
@@ -311,10 +318,11 @@ function defaultFrame(s) {
 }
 
 function groundAnkles(s) {
-  // Exact ankle coordinates matching 47px hero_f0 (rFoot=59, lFoot=61) & hero_b0 (lFoot=61, rFoot=59)!
-  return s === 'front'
-    ? { rx: 27, ry: 55, lx: 34, ly: 57 }
-    : { rx: 35, ry: 55, lx: 29, ly: 57 };
+  // Exact 4-direction ankle coordinates (front/front_r & back/back_r symmetric around x=31.5)
+  if (s === 'front')   return { rx: 27, ry: 55, lx: 34, ly: 57 };
+  if (s === 'front_r') return { rx: 36, ry: 55, lx: 29, ly: 57 };
+  if (s === 'back')    return { rx: 35, ry: 55, lx: 29, ly: 57 };
+  return                      { rx: 28, ry: 55, lx: 34, ly: 57 }; // back_r
 }
 
 function snapDeg(deg) {
@@ -374,28 +382,32 @@ function getSkeleton(s, f) {
   const hy = Math.max(0, Math.min(2, f.hy || 0));
   const drop = Math.abs(lean) >= 2 ? 1 : 0; // slight natural drop when leaning deeply
 
-  const pelvis = [31 + bx, 47 + by];
-  const torso  = [31 + bx, 42 + by];
-  const head   = [32 + bx + lean + hx, (s === 'front' ? 33 : 34) + by + drop + hy];
-  const bag    = [(s === 'front' ? 36 : 26) + bx + f.bagx, 46 + by + f.bagy];
+  const isFront = (s === 'front' || s === 'front_r');
+  const isRight = (s === 'front_r' || s === 'back_r');
+  const pelvis = [(isRight ? 32 : 31) + bx, 47 + by];
+  const torso  = [(isRight ? 32 : 31) + bx, 42 + by];
+  const head   = [(isRight ? 31 : 32) + bx + lean + hx, (isFront ? 33 : 34) + by + drop + hy];
+  const bag    = [(isFront ? (isRight ? 27 : 36) : (isRight ? 37 : 26)) + bx + f.bagx, 46 + by + f.bagy];
   const rLift  = Math.max(0, (Math.abs(f.ra1) - 70) / 110) * 1.4;
   const lLift  = Math.max(0, (Math.abs(f.la1) - 70) / 110) * 1.4;
-  const shMid0  = (s === 'front') ? 31.3 : 31.4;
-  const shHalf0 = (s === 'front') ? 5.3  : -5.6;
+  // Character's TRUE RIGHT ARM (rArm, sword hand) is ALWAYS screen-left in front views & screen-right in back views!
+  const shMid0  = isRight ? 31.6 : (isFront ? 31.3 : 31.4);
+  const shHalf0 = isFront ? 5.3 : -5.6;
   const twistRad = twist * 0.28; // ~16 deg per step -> cos(48deg)=0.67 at |twist|=3
   const cosT = Math.cos(twistRad), sinT = Math.sin(twistRad);
   const shCenter = shMid0 + bx + lean + twist * 0.35;
   const rSh    = [shCenter - shHalf0 * cosT, 37.6 - rLift + by + drop - sinT * 0.45];
   const lSh    = [shCenter + shHalf0 * cosT, 37.8 - lLift + by + drop + sinT * 0.45];
-  // 3/4 Pelvis Twist (Ispin Charles overlapping stride!): symmetric for front (-X) and back (+X)!
-  const dir = (s === 'front') ? 1 : -1;
+  // 3/4 Pelvis Twist (far leg = rLeg, near leg = lLeg) symmetric across all 4 directions!
+  const dir = (s === 'front' || s === 'back_r') ? 1 : -1;
+  const g0 = groundAnkles(s);
   const crossStride = f.lPin
-    ? Math.max(0, (s === 'front' ? (34 - f.lPinX) : (f.lPinX - 29)) * 0.55)
+    ? Math.max(0, (dir * (g0.lx - f.lPinX)) * 0.55)
     : Math.max(0, (dir * (f.lla1 - f.rla1)) / 28);
   const hipTwist = Math.min(2.6, crossStride);
   const hipCos = Math.cos(twistRad * 0.5);
-  const hipMid = 31.0 + bx + twist * 0.25;
-  const hipHalf = ((s === 'front') ? (3.0 - hipTwist) : -(3.0 - hipTwist)) * hipCos;
+  const hipMid = (isRight ? 32.0 : 31.0) + bx + twist * 0.25;
+  const hipHalf = dir * (3.0 - hipTwist) * hipCos;
   const rHip   = [hipMid - hipHalf, 46.5 + by];
   const lHip   = [hipMid + hipHalf, 47.5 + by];
 
@@ -733,7 +745,7 @@ function renderFrame64(s, f, includeSword = true, useOutline = true) {
 
   // Original pre-outlined parts (Torso -> Head): NEVER get a 2nd outer outline!
   blitTorsoShear(buf, P.torso, K.torso[0], K.torso[1], K.lean, K.twist);
-  blitPart(buf, (s === 'front' && f.hurt) ? P.head_hurt : P.head, K.head[0], K.head[1], 0);
+  blitPart(buf, ((s === 'front' || s === 'front_r') && f.hurt) ? P.head_hurt : P.head, K.head[0], K.head[1], 0);
 
   // Front arms (procedural 1px outline ONLY on arm pixels!)
   if (!f.lBehind) draw2BoneArm(buf, K.lArm, false, f.lCross, useOutline, nearArmR);
@@ -758,11 +770,11 @@ function render() {
   if (document.getElementById('chkGrid').checked) {
     // Isometric / 3/4 view SLANTED floor tracks (parallel diagonal lines matching 3/4 depth)!
     // In front view (facing down-left): moving forward (-X) shifts floor slightly DOWN (+Y) by ~1px per 6px!
-    const slope = (side === 'front') ? -0.18 : 0.14;
-    const nearY = 61; // through (33, 61) / (29, 60)
-    const farY  = 59;                           // through (27, 59) / (35, 59)
-    const refNearX = (side === 'front') ? 33 : 29;
-    const refFarX  = (side === 'front') ? 27 : 35;
+    const slope = (side === 'front') ? -0.18 : (side === 'front_r') ? 0.18 : (side === 'back') ? 0.14 : -0.14;
+    const nearY = 61;
+    const farY  = 59;
+    const refNearX = (side === 'front') ? 33 : (side === 'front_r') ? 30 : (side === 'back') ? 29 : 34;
+    const refFarX  = (side === 'front') ? 27 : (side === 'front_r') ? 36 : (side === 'back') ? 35 : 28;
 
     const drawIsoLine = (rx, ry, col, dashed) => {
       const yL = ry + (0 - rx) * slope;
@@ -990,27 +1002,30 @@ function setSide(s) {
   if (prevSide !== s) {
     const oldG = groundAnkles(prevSide);
     const newG = groundAnkles(s);
+    const prevDir = (prevSide === 'front' || prevSide === 'back_r') ? 1 : -1;
+    const newDir  = (s === 'front' || s === 'back_r') ? 1 : -1;
+    const flipX = (prevDir !== newDir);
     for (const f of frames) {
-      // Mirror foot pin coordinates symmetrically between front (-X) and back (+X)
       const dxr = f.rPinX - oldG.rx, dyr = f.rPinY - oldG.ry;
       const dxl = f.lPinX - oldG.lx, dyl = f.lPinY - oldG.ly;
-      f.rPinX = Math.round(newG.rx - dxr);
+      f.rPinX = Math.round(newG.rx + (flipX ? -dxr : dxr));
       f.rPinY = Math.round(newG.ry + dyr);
-      f.lPinX = Math.round(newG.lx - dxl);
+      f.lPinX = Math.round(newG.lx + (flipX ? -dxl : dxl));
       f.lPinY = Math.round(newG.ly + dyl);
-      // Mirror leg & arm angles and knee bend directions for clean front<->back parity
-      f.rla1 = -f.rla1; f.rla2 = -f.rla2;
-      f.lla1 = -f.lla1; f.lla2 = -f.lla2;
-      f.rba = -(f.rba || 0); f.lba = -(f.lba || 0);
-      f.rLegBend = (f.rLegBend || -1) * -1;
-      f.lLegBend = (f.lLegBend || -1) * -1;
-      f.ra1 = -f.ra1; f.ra2 = -f.ra2;
-      f.la1 = -f.la1; f.la2 = -f.la2;
-      f.bx = -f.bx; f.lean = -f.lean; f.twist = -(f.twist || 0); f.hx = -f.hx;
+      if (flipX) {
+        f.rla1 = -f.rla1; f.rla2 = -f.rla2;
+        f.lla1 = -f.lla1; f.lla2 = -f.lla2;
+        f.rba = -(f.rba || 0); f.lba = -(f.lba || 0);
+        f.rLegBend = (f.rLegBend || -1) * -1;
+        f.lLegBend = (f.lLegBend || -1) * -1;
+        f.bx = -f.bx; f.lean = -f.lean; f.twist = -(f.twist || 0); f.hx = -f.hx;
+      }
     }
   }
   document.getElementById('btnFront').classList.toggle('active', s === 'front');
+  document.getElementById('btnFrontR').classList.toggle('active', s === 'front_r');
   document.getElementById('btnBack').classList.toggle('active', s === 'back');
+  document.getElementById('btnBackR').classList.toggle('active', s === 'back_r');
   syncUI(); render();
 }
 
@@ -1205,14 +1220,30 @@ function loadPreset(name) {
     if (side === 'front') {
       frames = [
         { ...d(), bx: 1,  by: 0, lean: 0,  twist: 2,  ra1: 165, ra2: 15,  rBehind: false, la1: -45, la2: 30,  lBehind: false, rPin: true,  rPinX: 31, rPinY: 55, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -90,  sBehind: false },
-        { ...d(), bx: -2, by: 0, lean: 0,  twist: 0,  ra1: 90,  ra2: 0,   rBehind: false, la1: -75, la2: -15, lBehind: false, rPin: false, rla1: 30,  rla2: -45, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -150, sBehind: false },
+        { ...d(), bx: -1, by: 0, lean: 0,  twist: 1,  ra1: 130, ra2: 10,  rBehind: false, la1: -60, la2: 10,  lBehind: false, rPin: false, rla1: 35,  rla2: -50, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -125, sBehind: false },
+        { ...d(), bx: -4, by: 1, lean: -1, twist: 0,  ra1: 90,  ra2: 0,   rBehind: false, la1: -80, la2: -15, lBehind: false, rPin: true,  rPinX: 20, rPinY: 56, rba: 10, lPin: true, lPinX: 33, lPinY: 57, lba: -10, sword: true, sa: -155, sBehind: false },
         { ...d(), bx: -5, by: 1, lean: -1, twist: -3, ra1: -30, ra2: -45, rCross: true,   rBehind: false, la1: -90, la2: 0, lBehind: false, rPin: true, rPinX: 20, rPinY: 56, rba: 10, lPin: true, lPinX: 33, lPinY: 57, lba: -10, sword: true, sa: 45, sBehind: false },
+      ];
+    } else if (side === 'front_r') {
+      frames = [
+        { ...d(), bx: -1, by: 0, lean: 0, twist: -2, ra1: -145, ra2: -15, rBehind: false, rCross: true, la1: -30, la2: -20, lBehind: true, lPin: true, lPinX: 30, lPinY: 57, rPin: true,  rPinX: 32, rPinY: 55, sword: true, sa: -75, sBehind: false },
+        { ...d(), bx: 1,  by: 0, lean: 0, twist: -1, ra1: -115, ra2: -10, rBehind: false, rCross: true, la1: -55, la2: -20, lBehind: true, lPin: true, lPinX: 30, lPinY: 57, rPin: false, rla1: -35, rla2: 50, sword: true, sa: -40, sBehind: false },
+        { ...d(), bx: 4,  by: 1, lean: 1, twist: 0,  ra1: -90,  ra2: 0,   rBehind: false, rCross: true, la1: -75, la2: 15,  lBehind: true, lPin: true, lPinX: 30, lPinY: 57, lba: 10, rPin: true, rPinX: 43, rPinY: 56, rba: -10, sword: true, sa: -15, sBehind: false },
+        { ...d(), bx: 5,  by: 1, lean: 1, twist: 3,  ra1: 45,   ra2: 25,  rBehind: false, la1: -85, la2: 15, lBehind: true, lPin: true, lPinX: 30, lPinY: 57, lba: 10, rPin: true, rPinX: 43, rPinY: 56, rba: -10, sword: true, sa: 135, sBehind: false },
+      ];
+    } else if (side === 'back') {
+      frames = [
+        { ...d(), bx: 1,  by: 0, lean: 0,  twist: -2, ra1: -115, ra2: -35, rBehind: true, la1: 40, la2: -30, lBehind: false, rPin: true, rPinX: 36, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85,  sBehind: true },
+        { ...d(), bx: -1, by: 0, lean: -1, twist: 1,  ra1: 110,  ra2: -10, rBehind: true, la1: 65, la2: -20, lBehind: false, rPin: true, rPinX: 28, rPinY: 53, rba: 8,  lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -145, sBehind: true },
+        { ...d(), bx: -3, by: 0, lean: -1, twist: 1,  ra1: 105,  ra2: -10, rBehind: true, la1: 55, la2: -15, lBehind: false, rPin: true, rPinX: 22, rPinY: 53, rba: 12, lPin: true, lPinX: 30, lPinY: 57, lba: -5, sword: true, sa: -150, sBehind: true },
+        { ...d(), bx: -3, by: 0, lean: -1, twist: 3,  ra1: 60,   ra2: 35,  rBehind: true, la1: 30, la2: 30,  lBehind: false, rPin: true, rPinX: 22, rPinY: 53, rba: 12, lPin: true, lPinX: 30, lPinY: 57, lba: -5, sword: true, sa: 155,  sBehind: true },
       ];
     } else {
       frames = [
-        { ...d(), bx: 1,  by: 0,  lean: 0,  twist: -2, ra1: -105, ra2: -30, rBehind: true, la1: 40, la2: -30, lBehind: false, rPin: true, rPinX: 36, rPinY: 56, lPin: true, lPinX: 29, lPinY: 57, sword: true, sa: -85,  sBehind: true },
-        { ...d(), bx: -1, by: -1, lean: -1, twist: 1,  ra1: 110,  ra2: -10, rBehind: true, la1: 65, la2: -20, lBehind: false, rPin: true, rPinX: 30, rPinY: 53, lPin: true, lPinX: 29, lPinY: 57, sword: true, sa: -145, sBehind: true },
-        { ...d(), bx: -3, by: -1, lean: -1, twist: 3,  ra1: 60,   ra2: 35,  rBehind: true, la1: 30, la2: 30,  lBehind: false, rPin: true, rPinX: 24, rPinY: 52, rba: 10, lPin: true, lPinX: 29, lPinY: 57, sword: true, sa: 155, sBehind: true },
+        { ...d(), bx: -1, by: 0, lean: 0, twist: -2, ra1: -135, ra2: -30, rBehind: true,  la1: 45, la2: -25, lBehind: false, lPin: true, lPinX: 33, lPinY: 57, rPin: true, rPinX: 27, rPinY: 55, sword: true, sa: -85, sBehind: true },
+        { ...d(), bx: 1,  by: 0, lean: 0, twist: -1, ra1: -110, ra2: -10, rBehind: false, la1: 65, la2: -15, lBehind: false, lPin: true, lPinX: 33, lPinY: 57, rPin: true, rPinX: 35, rPinY: 53, rba: -8,  sword: true, sa: -45, sBehind: false },
+        { ...d(), bx: 3,  by: 0, lean: 1, twist: 0,  ra1: -85,  ra2: 0,   rBehind: false, la1: 80, la2: 10,  lBehind: false, lPin: true, lPinX: 33, lPinY: 57, lba: 5, rPin: true, rPinX: 41, rPinY: 53, rba: -12, sword: true, sa: -15, sBehind: false },
+        { ...d(), bx: 3,  by: 0, lean: 1, twist: 3,  ra1: 55,   ra2: 35,  rBehind: true,  la1: 85, la2: 15,  lBehind: false, lPin: true, lPinX: 33, lPinY: 57, lba: 5, rPin: true, rPinX: 41, rPinY: 53, rba: -12, sword: true, sa: 150, sBehind: true },
       ];
     }
   } else if (name === 'slash2') {
