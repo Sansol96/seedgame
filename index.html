@@ -1269,17 +1269,17 @@ function loadPreset(name) {
       ];
     } else if (side === 'back') {
       frames = [
-        { ...d(), bx: 1,  by: 0, lean: 0,  twist: -2, ra1: -115, ra2: -35, rBehind: true, la1: 40, la2: -30, lBehind: false, rPin: true, rPinX: 36, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85,  sBehind: true },
-        { ...d(), bx: -1, by: 0, lean: -1, twist: 1,  ra1: 110,  ra2: -10, rBehind: true, la1: 65, la2: -20, lBehind: false, rPin: true, rPinX: 28, rPinY: 53, rba: 8,  lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -145, sBehind: true },
-        { ...d(), bx: -3, by: 0, lean: -1, twist: 1,  ra1: 105,  ra2: -10, rBehind: true, la1: 55, la2: -15, lBehind: false, rPin: true, rPinX: 22, rPinY: 53, rba: 12, lPin: true, lPinX: 30, lPinY: 57, lba: -5, sword: true, sa: -150, sBehind: true },
-        { ...d(), bx: -3, by: 0, lean: -1, twist: 3,  ra1: 60,   ra2: 35,  rBehind: true, la1: 30, la2: 30,  lBehind: false, rPin: true, rPinX: 22, rPinY: 53, rba: 12, lPin: true, lPinX: 30, lPinY: 57, lba: -5, sword: true, sa: 155,  sBehind: true },
+        { ...d(), bx: 1,  by: 0,  lean: 0,  twist: -2, hx: 0,  ra1: -110, ra2: -30, rBehind: true,  la1: 45, la2: -25, lBehind: false, rPin: true,  rPinX: 35, rPinY: 55, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -85, sBehind: true },
+        { ...d(), bx: 0,  by: -1, lean: 0,  twist: -1, hx: 0,  ra1: -100, ra2: -20, rBehind: true,  la1: 65, la2: -20, lBehind: false, rPin: false, rla1: 15,  rla2: -20, lPin: true, lPinX: 30, lPinY: 57, sword: true, sa: -65, sBehind: true },
+        { ...d(), bx: -4, by: -2, lean: -1, twist: 0,  hx: -1, ra1: -90,  ra2: -10, rBehind: false, la1: 85, la2: -10, lBehind: false, rPin: true,  rPinX: 23, rPinY: 51, rba: 10, lPin: true, lPinX: 30, lPinY: 57, lba: -10, sword: true, sa: -45, sBehind: false },
+        { ...d(), bx: -4, by: -2, lean: -1, twist: 3,  hx: -1, ra1: 55,   ra2: 35,  rBehind: true,  la1: 35, la2: 25,  lBehind: false, rPin: true,  rPinX: 23, rPinY: 51, rba: 10, lPin: true, lPinX: 30, lPinY: 57, lba: -10, sword: true, sa: 150, sBehind: true },
       ];
     } else {
       frames = [
-        { ...d(), bx: -1, by: 0, lean: 0, twist: -2, ra1: -135, ra2: -30, rBehind: true,  la1: 45, la2: -25, lBehind: false, lPin: true, lPinX: 33, lPinY: 57, rPin: true, rPinX: 27, rPinY: 55, sword: true, sa: -85, sBehind: true },
-        { ...d(), bx: 1,  by: 0, lean: 0, twist: -1, ra1: -110, ra2: -10, rBehind: false, la1: 65, la2: -15, lBehind: false, lPin: true, lPinX: 33, lPinY: 57, rPin: true, rPinX: 35, rPinY: 53, rba: -8,  sword: true, sa: -45, sBehind: false },
-        { ...d(), bx: 3,  by: 0, lean: 1, twist: 0,  ra1: -85,  ra2: 0,   rBehind: false, la1: 80, la2: 10,  lBehind: false, lPin: true, lPinX: 33, lPinY: 57, lba: 5, rPin: true, rPinX: 41, rPinY: 53, rba: -12, sword: true, sa: -15, sBehind: false },
-        { ...d(), bx: 3,  by: 0, lean: 1, twist: 3,  ra1: 55,   ra2: 35,  rBehind: true,  la1: 85, la2: 15,  lBehind: false, lPin: true, lPinX: 33, lPinY: 57, lba: 5, rPin: true, rPinX: 41, rPinY: 53, rba: -12, sword: true, sa: 150, sBehind: true },
+        { ...d(), bx: -1, by: 0,  lean: 0, twist: -2, hx: 0, ra1: -125, ra2: -30, rBehind: true,  la1: 45, la2: -25, lBehind: false, rPin: true,  rPinX: 28, rPinY: 55, lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -85, sBehind: true },
+        { ...d(), bx: 0,  by: -1, lean: 0, twist: -1, hx: 0, ra1: -105, ra2: -15, rBehind: false, la1: 65, la2: -15, lBehind: false, rPin: false, rla1: -15, rla2: 20,  lPin: true, lPinX: 33, lPinY: 57, sword: true, sa: -50, sBehind: false },
+        { ...d(), bx: 4,  by: -2, lean: 1, twist: 0,  hx: 1, ra1: -85,  ra2: 0,   rBehind: false, la1: 85, la2: 10,  lBehind: false, rPin: true,  rPinX: 40, rPinY: 51, rba: -10, lPin: true, lPinX: 33, lPinY: 57, lba: 10, sword: true, sa: -20, sBehind: false },
+        { ...d(), bx: 4,  by: -2, lean: 1, twist: 3,  hx: 1, ra1: 55,   ra2: 35,  rBehind: true,  la1: 90, la2: 15,  lBehind: false, rPin: true,  rPinX: 40, rPinY: 51, rba: -10, lPin: true, lPinX: 33, lPinY: 57, lba: 10, sword: true, sa: 150, sBehind: true },
       ];
     }
   } else if (name === 'slash2') {
