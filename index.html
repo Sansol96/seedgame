@@ -181,9 +181,9 @@
   <div class="right">
     <div class="box">
       <h3>🧍 척추(시어·회전) · 머리 <button class="mini" onclick="setF('lean',0);setF('twist',0);setF('hx',0);setF('hy',0);syncUI()">기울임 0</button></h3>
-      <div class="row"><label>몸통 X</label><input type="range" id="s_bx" min="-5" max="5" value="0" oninput="setF('bx',+this.value)"><input type="number" class="val-in" id="n_bx" min="-5" max="5" value="0" oninput="setNum('bx',this)"></div>
-      <div class="row"><label>몸통 Y</label><input type="range" id="s_by" min="-5" max="4" value="0" oninput="setF('by',+this.value)"><input type="number" class="val-in" id="n_by" min="-5" max="4" value="0" oninput="setNum('by',this)"></div>
-      <div class="row"><label>몸통 숙임</label><input type="range" id="s_lean" min="-3" max="3" value="0" oninput="setF('lean',+this.value)"><input type="number" class="val-in" id="n_lean" min="-3" max="3" value="0" oninput="setNum('lean',this)"></div>
+      <div class="row"><label>몸통 X</label><input type="range" id="s_bx" min="-8" max="8" value="0" oninput="setF('bx',+this.value)"><input type="number" class="val-in" id="n_bx" min="-8" max="8" value="0" oninput="setNum('bx',this)"></div>
+      <div class="row"><label>몸통 Y</label><input type="range" id="s_by" min="-6" max="6" value="0" oninput="setF('by',+this.value)"><input type="number" class="val-in" id="n_by" min="-6" max="6" value="0" oninput="setNum('by',this)"></div>
+      <div class="row"><label>몸통 숙임</label><input type="range" id="s_lean" min="-4" max="4" value="0" oninput="setF('lean',+this.value)"><input type="number" class="val-in" id="n_lean" min="-4" max="4" value="0" oninput="setNum('lean',this)"></div>
       <div class="row"><label>몸통 회전</label><input type="range" id="s_twist" min="-3" max="3" value="0" oninput="setF('twist',+this.value)"><input type="number" class="val-in" id="n_twist" min="-3" max="3" value="0" oninput="setNum('twist',this)"></div>
       <div class="row"><label>머리 앞/뒤</label><input type="range" id="s_hx" min="-1" max="1" value="0" oninput="setF('hx',+this.value)"><input type="number" class="val-in" id="n_hx" min="-1" max="1" value="0" oninput="setNum('hx',this)"></div>
       <div class="row"><label>머리 끄덕</label><input type="range" id="s_hy" min="0" max="2" value="0" oninput="setF('hy',+this.value)"><input type="number" class="val-in" id="n_hy" min="0" max="2" value="0" oninput="setNum('hy',this)"></div>
@@ -414,7 +414,7 @@ function getSkeleton(s, f) {
   const rArm = fk2Bone(rSh[0], rSh[1], f.ra1, f.ra2, ARM_L1, ARM_L2);
   const lArm = fk2Bone(lSh[0], lSh[1], f.la1, f.la2, ARM_L1, ARM_L2);
 
-  const RL = 4.25, LL = 4.75;
+  const RL = 4.65, LL = 4.95;
   let rLeg, lLeg;
   if (f.rPin) {
     const [a1, a2] = solve2BoneIK(rHip[0], rHip[1], f.rPinX, f.rPinY, RL, RL, f.rLegBend || -1);
