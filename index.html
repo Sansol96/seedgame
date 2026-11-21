@@ -303,8 +303,8 @@ function loadAllImages() {
 function defaultFrame(s) {
   const curSide = s || (typeof side !== 'undefined' ? side : 'front');
   const g = groundAnkles(curSide);
-  // Left-facing (front ↙, back ↖) bends knees LEFT (-1); Right-facing (front_r ↘, back_r ↗) bends knees RIGHT (+1)!
-  const legBend = (curSide === 'front' || curSide === 'back') ? -1 : 1;
+  // In fk2Bone (+angle = LEFT -X): bendDir=+1 bends knees LEFT (front ↙, back ↖), bendDir=-1 bends knees RIGHT (front_r ↘, back_r ↗)!
+  const legBend = (curSide === 'front' || curSide === 'back') ? 1 : -1;
   return {
     bx: 0, by: 0, lean: 0, twist: 0, hx: 0, hy: 0, bagx: 0, bagy: 0, hurt: false,
     // Arms: a1 = upper arm angle (0=down, +clockwise), a2 = elbow bend relative to a1!
@@ -1038,7 +1038,7 @@ function setSide(s) {
     const flipX = (prevRight !== newRight);
     const prevBack = (prevSide === 'back' || prevSide === 'back_r');
     const newBack  = (s === 'back' || s === 'back_r');
-    const targetBend = newRight ? 1 : -1;
+    const targetBend = newRight ? -1 : 1;
     for (const f of frames) {
       const dxr = f.rPinX - oldG.rx, dyr = f.rPinY - oldG.ry;
       const dxl = f.lPinX - oldG.lx, dyl = f.lPinY - oldG.ly;
