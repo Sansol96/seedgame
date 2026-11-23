@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>🌱 새싹 숲 — 64×64 파츠 조립 & 도트 스튜디오</title>
+<style>
+  * { box-sizing: border-box; user-select: none; }
+  body { margin: 0; background: #1e2128; color: #e8e6e3; font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: #262a34; padding: 8px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #393f4f; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 15px; color: #a7e3a1; margin-right: 8px; }
+  button, select { background: #343a48; color: #eef; border: 1px solid #4c556a; border-radius: 5px; padding: 5px 9px; font-size: 12px; cursor: pointer; }
+  button:hover { background: #434b5d; }
+  button.primary { background: #3e7c59; border-color: #5ea87d; color: #fff; font-weight: bold; }
+  button.primary:hover { background: #4c946b; }
+  button.active { background: #d68b38; border-color: #f3b562; color: #1b1b1b; font-weight: bold; }
+  main { flex: 1; display: flex; overflow: hidden; }
+  .left-tools { width: 175px; background: #232731; border-right: 1px solid #353b4a; padding: 10px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #191c22; position: relative; overflow: hidden; padding: 10px; }
+  .right-panel { width: 325px; background: #232731; border-left: 1px solid #353b4a; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .section-title { font-size: 11px; color: #9ab; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: bold; border-bottom: 1px solid #343b4a; padding-bottom: 3px; }
+  .canvas-wrap { position: relative; border: 2px solid #495266; background: repeating-conic-gradient(#2d323e 0% 25%, #252933 0% 50%) 50% / 16px 16px; cursor: crosshair; }
+  canvas { image-rendering: pixelated; display: block; }
+  .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .swatch { width: 26px; height: 26px; border-radius: 4px; border: 2px solid #111; cursor: pointer; }
+  .swatch.sel { border-color: #fff; transform: scale(1.1); }
+  .layer-card { background: #2b303c; border: 1px solid #3d4557; border-radius: 6px; padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+  .layer-card.editing { border-color: #f3b562; box-shadow: 0 0 0 1px #f3b562; }
+  .layer-head { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+  .layer-head b { font-size: 12px; }
+  .nudge { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+  .nudge button { padding: 2px 6px; font-size: 11px; }
+  .timeline { height: 116px; background: #232731; border-top: 1px solid #353b4a; padding: 8px 12px; display: flex; align-items: center; gap: 10px; overflow-x: auto; }
+  .thumb { width: 72px; height: 86px; background: #2d323e; border: 2px solid #424a5c; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .thumb.cur { border-color: #7ee787; background: #313b36; }
+  .thumb span { font-size: 10px; color: #bbb; margin-top: 2px; }
+  .mini-preview { background: #2d323e; border: 1px solid #4a5368; border-radius: 6px; padding: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  #toast { position: fixed; bottom: 126px; left: 50%; transform: translateX(-50%); background: rgba(20,25,30,0.92); color: #a7f3a1; padding: 7px 14px; border-radius: 20px; border: 1px solid #5ea87d; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 99; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 64×64 파츠 조립 & 도트 스튜디오</h1>
+  <select id="animSel" onchange="selectAnim(this.value)"></select>
+  <button onclick="addAnim()">+ 새 동작</button>
+  <button id="btnPlay" class="primary" onclick="togglePlay()">▶ 재생</button>
+  <label style="font-size:12px;">FPS <input type="number" id="fpsIn" value="7" min="1" max="20" style="width:44px;background:#1d2028;color:#fff;border:1px solid #4c556a;border-radius:4px;padding:2px 4px;" onchange="setFps(+this.value)"></label>
+  <label style="font-size:12px;"><input type="checkbox" id="chkFlip" onchange="render()"> ↔ 좌우반전(flipX)</label>
+  <label style="font-size:12px;"><input type="checkbox" id="chkGuide" checked onchange="render()"> 📏 발바닥(61)/허리 가이드</label>
+  <div style="flex:1"></div>
+  <button onclick="exportBakedSheet(false)">🖼️ 시트 굽기(빈손)</button>
+  <button onclick="exportBakedSheet(true)">⚔️ 시트 굽기(무기포함)</button>
+  <button class="primary" onclick="exportPoseTable()">💾 조립표 JSON</button>
+  <button onclick="document.getElementById('jsonIn').click()">📂 조립표 열기</button>
+  <input type="file" id="jsonIn" accept=".json" style="display:none" onchange="importPoseTable(this)">
+</header>
+
+<main>
+  <div class="left-tools">
+    <div>
+      <div class="section-title">도트 수정 도구</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+        <button id="t_pen" class="active" onclick="setTool('pen')">✏️ 연필</button>
+        <button id="t_era" onclick="setTool('eraser')">🧹 지우개</button>
+        <button id="t_pick" onclick="setTool('picker')">💉 스포이드</button>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button onclick="undo()" style="flex:1;">↩ 실행취소</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">편집 중인 파츠</div>
+      <div id="editInfo" style="font-size:11px;color:#ffd479;margin-bottom:6px;">legs / front_walk_0</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <button onclick="downloadCurrentPart()">💾 이 파츠 PNG 저장</button>
+        <button onclick="document.getElementById('pngIn').click()">📥 외부 PNG 덮어쓰기</button>
+        <input type="file" id="pngIn" accept=".png" style="display:none" onchange="replaceCurrentPartPNG(this)">
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">클래식 팔레트</div>
+      <div class="palette" id="palette"></div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:11px;">
+        <span>현재색</span>
+        <input type="color" id="colorPick" value="#482d26" onchange="curColor=this.value" style="width:36px;height:22px;border:none;background:none;cursor:pointer;">
+      </div>
+    </div>
+
+    <div class="mini-preview">
+      <div style="font-size:11px;color:#9ab;">실시간 2배율 미리보기</div>
+      <canvas id="miniCv" width="128" height="128"></canvas>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="canvas-wrap">
+      <canvas id="mainCv" width="512" height="512"></canvas>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:#9ab;">
+      💡 오른쪽에서 <b>[✏️ 편집]</b> 누른 레이어만 캔버스에서 바로 수정되며, 같은 파츠를 쓰는 모든 프레임에 즉시 반영돼요! (단축키: B 연필 / E 지우개 / I 스포이드 / Ctrl+Z 실행취소)
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="section-title" style="margin:0;border:none;">6겹 파츠 조립표</div>
+      <select id="sideSel" onchange="setAnimSide(this.value)">
+        <option value="front">앞모습 Z순서</option>
+        <option value="back">뒷모습 Z순서</option>
+      </select>
+    </div>
+    <div id="layerControls" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+</main>
+
+<div class="timeline" id="timeline"></div>
+<div id="toast"></div>
+
+<script>
+const EMBEDDED_PARTS = {"head": {"back_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABh0lEQVR4nO3XsUrDQBjA8Utotw6OdbENqIigu06iIH0HR1/Dd3HyAdxcdFRwrCDiEiuIDg4d3BwiF3L1DNe0NPkuDf5/S9LL5Zrvu9xdTikAAAAAAAD8L4GvPxrsbCaz6lw9PHt7HqPlK/CTo10V9buT8vjlIz2asux34jsRge/AbTd3T+kxWl2Z1Dm/vFdvn2NvSQikgi8KPJ+Ew72tP2X6bbi4HnpJQlBn8EV8JSGUaPRgY710G2UTWEsCBlnv25PconrtTjp/zLN6LNUqEPW7avT9tXAP6sC13zaGqpHLYK/dSYMw54Ypc9Uvut64BIysQOYJalqdbEglUpNhqISUnQN8TYatqhvMf+Etu7DKxvRrqtfuJgklGnV989c9lLx9B5ydHpd6cPs+fR6/j5WkUC0h6V4XnwRjq9f0uR4Srk2P8/7cvbePr6L7gaDqBvUw2N9ec14z2167h+35wmyPDengRbfD5nxaMorowLVGbofzXJsZO7BZ1wEAAAAAAAAAAABViR+MIava+To56QAAAABJRU5ErkJggg==", "front_hurt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAB9UlEQVR4nO3YsUvDQBQG8NcQN5EOIhXBtqAigo6CTmJBMwjFyaFT0T9AVxUHQcFV3BQcHaXgUBfppOAmgogK2oIo4lDEzaHyYi+caRJbwsVEvx+Ea65N9X25uyQlAgAAAAAAAAD4Z2JB/jFjeKDWzOeKlzeB/V96kIXnMiOUTiUa3r9/eLZ31YIKQg+ieC6cORXv1J/LWC9rqkPQgyjerXA34vP1IJSGoIeteBkfqzoEjRSa6O/z/R1+Avy1AAxp3rssci0ZH+pt+goSmhGQTiWo/PFOybZ2c1+0rRDHTI4Nkiqaqi/ms85b6fbO6rOHwe/7CSjcATxVzU3g0cAbF82t3C+38pSR+1bnp5RMA40USnfHzZaDODm7tl4z3jdD8rk+hPIyWPy6ZJlna3ljzezbXFm3QhCtHAi3HJhY9fcL55TPjlIkAzDqVwF5CoggnHA4dsmuDnN0RPIyaDczu+DZz+HIAXFwi/k5yhrT1mIa6QCODvcaQuB97vdSKB5T6aLybQ2JVADllzfXYp1CkafM0tauWTxPBZU0CoDbmXbrF8HJxZ9eVZQ8HsdIEV4Iezrj9Pha/XGoi4XQqXCVxTOlz9ocAt/HcwFeIRzsbDsOdz6OqXwcjpFiTndvckFed3dB/jQGAAAAAAAAAAAAAAAAQH/bJ79e6eFd3T4xAAAAAElFTkSuQmCC", "front_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACAklEQVR4nO2YsUvDQBTGX0vcRDqIVATbgooIOgoKgijUCEJxcuhU9A/QVcVBUHAVNwVHRykIVgcpCApuIoiooC2IIg5F3Bwq79oLZ2xKS7iY6veD8JKXS9rvy927XIgAAAAAAAAAAAAA/hkBL3/M7O8p1tIuc3Xr2f8yvBSeHB+gWDT84/zD44s9VfTKCMML8SycqSS+Uj45bu0WdZtgeCHeSbgTsn3ZCK0mGH4Tr8LX6jYhSBoZ7e5yfQ83Bv6aAaYy7h2KXF0M93XWPIP4pgfEomHKfX5QpKlZHMtYD/KasaFe0kVQ1435qfOWvbu3cnYz+Lwbg/xtwHNBbBLuDbyxaI5qXo3qkFFzy7NxLcMgSBqJtYdEZCNOzm+sfYaPhUku64Mvp8FMacoST2txbUXk1pdWLRNkVA3hyIbJqr+bvqBUYpAa0gCzPAtIcVPTc3Swv/OtjZpjc+xE2lpE72jIadDO4emxEOyU414iewrDxs2nZihhTljFtKEXQ5Mj8ZpydtKZI8pe5ku9QSmoDWNA7vW9rvaiDpS7/MLGtogsXicGeYB9/Dvl7Map4s+u81qWxwHSBBfCjtYQPb0VqoqVcCGsJFyneEbrWptN4Pd4FlDNhL2tTWusq/B1jM7lcIA0U+ntTRVU7e3Oy09jAAAAAAAAAAAAAAAAAAAAANDf5gvdFOQ2K2PSzgAAAABJRU5ErkJggg=="}, "torso": {"back_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAxUlEQVR4nO3WPwrCMBTH8dfQA6i4iOAiZOvo7CLFg3grPUjxGm4BFxc3BS9QeYUUF8VBXoL9fiBDQuCXf/AiAgAAAAAAAAAAAAAAAAD4nW3l20ez75v2JaHCKkg3Oq53svReziH047F/Px6kOQWz9USlZdjteuk2rC0XTjKgB9JWdfdKBnkAKTmLEL1ZveHVevN2zmS2kBScDJyTgXNWQZ+ef6wQKZRWQa+1PyeFRci35e1vP0Lz6Uhy5VIvAAAAAAAAMfcE9wcvea3a9iYAAAAASUVORK5CYII=", "back_lean_back": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAxUlEQVR4nO3VMQrCQBCF4ZclB1CxEcFGSJfS2kaCB/FWepDgNewWbGzsFLxAZFIINmohswv5P1hCtnm7mSEjAQAAAAAAAAAAAAAAAAD+a1tX3aPdv5a9K5HCM8wuOm52b3vLquqf5xh1Px7UnqLrmUo5u10vWq03ykVQJqwTurrpu2SQHyCV4BVklbUKf2r/yWwhb0EDF3KpfqopELyCvv35bTqkUHoFWYVzVHiE/DravNvfrQPm05FyFVIfAAAAAAAAuXsCMME3U3wuumIAAAAASUVORK5CYII=", "back_lean_fwd": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA3UlEQVR4nO3WsQqCQBzH8f8dPkBFSwQtgZtjc0tID9Jb1YOItDQ3uh20tLQV9ALGCQkJSUP9T/L7gQMPhd/5P/+qCAAAAAAAAAAAAAAAAADgO9ZJXN6zbT38XAIzGiH+RofpRuZxXM1Pzr2cv+U7yQqnspYmqxV0vZzrY1+I5wjNhl6AL0KZpNVT0ssChGZ/HeB31u/wYrl6e81oMpO/LUBWOGOKXI6HfWsb+JdkiDaw0nNWK6itBZpfCU2RVlDz298VRiPk094O8TMUaYRMxwPpKht6AQAAAAAAiLoH7M815nwtuOMAAAAASUVORK5CYII=", "front_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA40lEQVR4nO3WoQrCUBTG8bPLqgabxWgTRFRsIojsPcRmt+gDaLaI+gA247DYDSLYBhaLTcEXmFxhNrHdM9z/V3a38t1zuTscEQAAAAAAAAAAAAAAAAD/zNMIfYbLOFnng4HKHhK+i5CgUo7rw9nnPdeqynE+ldpwJOPFNr5EkTx2KwnPkfPDMKJgsjm9i7dP6367ihajFZwUr824CrLXPI2MpECj3ZW40nv3ikwegCYjGWdchn3rA/Z7oVhS+Q18cSxtzdB3FWQHnV80RkLPVVC/0/x5tdf7QzYmQQAAAAAAIJpeyTs1qUKt8UQAAAAASUVORK5CYII=", "front_lean_back": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABAUlEQVR4nO3WMUvDQBjG8SdHZkE3ly5CtoKIukqhlH4DwVXdundy6tTMbuoH0E9QSkFcLRSh20HBdulmS7/ASQp1K93uDfX/W5LAwXP35vLmJAAAAAAAAAAAAAAAAAD7LLEKXvWewub+oHlvNo80VlCzmoXzVv73nE+lzvWpRo9dheV3uOm8adF/Vm/soxbDydDD65fOWu319Wc+M5mDk7Fi8ZZczLCJ9yobp5K4uKorVBvrXvEvC2DFxQgp3uph404nWbZ1zPBjoGTc3++/wMT7rX3g6Lhi8gmkMlCmZpjGCioOObtYHAeTWEG3tcudW/vl/TN6DVzsQAAAAAAAIGu/6Y4/lIaXjwsAAAAASUVORK5CYII=", "front_lean_fwd": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA90lEQVR4nO3WoYoCURTG8W8ukw02y8ZtgohaZWGReQMfQGx2k8m0m23qA+wbDFu2G2TBNmCx2BR8gZE7IIhhTXvuoP9fukz57jkczh0JAAAAAAAAAAAAAAAAwCOLrANP6Ty/nCvJ0Dz/VvTfAUn9NW+NPovztN/Qevah5misyddv8W2bZTp+L5RusiDNcJZhvujr4r3DfqeQnHXgdfFl4CxC/JiXlQt9gXb3XXm9V+yKh2xAuskiv+T+moKQTXB6cnHoC1wmo1p70UE9JVJu+STGMlTGZRhbBfk9cE+IP6HIKmjw1rm74JY/K/MeOOtAAAAAAACg0M7rRj+zfW2qwAAAAABJRU5ErkJggg=="}, "legs": {"back_attack": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABHklEQVR4nO3XvUrDUBTA8ZMYBAtahyBIoR0CHYSuRdw6iKGjQ1+gSvsCfQLHvEBB8gqZu3Xv6ubm4CIO4tCCS+RWMB91cMm9off/20645OScwLn3igAAAAAAAAAAAAAAAAAAAAAAsHccHUnGg376n3XxcqXle/JcsZxX5cvDXjdt+aeFZ6/vH9I4OtxZu958iQmuWM4Vy7liOU93QjUT1BwoWzw9a98BlMqTqkFYfvY4vS3E9/PEWAM8HUnyBatim0HwG49mkbHitTXg/GaYBfNErJ4ByvHltWQi2fsGHPjtQvwwuZO68Ko+BXbOTmpVsJYGhL1uenVR/Ot5L2+fYvUMiA3c+rQ2YPGzrW33//JlqG6cqhOUD0Im9/y/fAP9gjXbKNfn2gAAAABJRU5ErkJggg==", "back_fall": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABJ0lEQVR4nO3WsWrCQBjA8S9BhBZsO5SCFOogdCh0L+4SkS76DEp9D19C0Gdol0JD14IvEHDIKHRzcFLoolw0EpIGp8tp8v/BQXIHSb7vLt+dCAAAAAAAAAAAAAAAAAAAAAAAuWPpfHjr+XFzf3uT6P9dLOXyopzoX63/xPV8rd8UZ0vB2VJwtonlr5a5Wu5R8fuzT4Dr+ZYKVrW0cRV02MaDrphQ0v0CFVh/9H64jxe5MPDrel1ymYCq05bx/jqaiJCpwDMtglWnHTQp+i7w+TEJimO0r/LSPLTc/QKu51uvnd7m6+c7MaYS0Xh6kOFbT0wq6d4Ga3dXxoPMPAGt/eweM53N5b+zQq52gTRZn/kzTYC7Cy4odqZn+BhL9wviVf9UZh6QwBbbhFiCsJcpegAAAABJRU5ErkJggg==", "back_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABE0lEQVR4nO3WvWoCQRDA8fFcAgloUogQAqYQUgi2QdKlCBFLX0FD8h4p8wIB8RVSb2dnYSukSBlIZ2EVIY2yfnseweZ2F/f/63ZYbm5m2Q8RAAAAAAAAAAAAAAAAAAAAAACOTsZGktb97fSQed3ewMr/bMuk+fF69WZ6VbjYi/+MxnJ2erIX/538iR5+WW1CJIGLJHCRBE65Smz2e5zt/W+kntAchEmFmnjnpbmOPb1/OGmAspEkXujKebksrikbSS4fG5vBVgOCPgOMXO1BNt7kaBuQLZR2xmb/31VK8vrcFtdU2q/A62Lei0KtNqC+XOH/9D+/JemZHMQZoB1cd1YboBcFzu9/H1bZq4eQ9mj1BSIzzJ46wtSgUMkAAAAASUVORK5CYII=", "back_jump": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABM0lEQVR4nO3XPUoDQRTA8bfrIiioKYIggVgELAR7EVJGo2WKnCBBL5ATWOYCQm5gYZ0TeIGARUohXQqrCDbKW3ZkYJNUztuY/f9g2WG/Zt/Me/shAgAAAAAAAAAAAAAAAAAAAADYPlHIi7cvzr5r1Upu+2z+Ift7u0vPWXx+yXgyDXpfvlhKLi6qY51pv+2W0UMnzRyr+0iKSH+X4n6gGrg6ajRkKzJgPJlGGqwu647R9fNwkAZuHbxJCejMuoHwZ99lgAbv6w6Gpg/BJHQHJzd3Msra/aeX3P6Dy9Zv+7Z5bRq8yQC4QUh5A6Czf3Vel8f7nhQplpJLQnewU62v3Pf69i7L3hSWopCvwNPjw1zA1jVungHtrLb/i1hKLvnrC2Ypnn7hFV3fG/E3KJ5Nq39A8AOlJmJPE2hLaAAAAABJRU5ErkJggg==", "back_walk_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABMklEQVR4nO3WvUrDUBTA8ZNrEHRQhyKIUIeCg9C1g5tTi6ODLyCFvkCfIi9QKH0Bh64Wlw6CQ1fBwVFwK9jFCi6RE63cptqt58by/8ElyQ3k5Jz7kYgAAAAAAAAAAAAAAAAAAAAAALB2IosgV2e19GU8kcPS3sI9v783HJm8jy+2CPJX8jOvb1OZvn9ICE4C0sJsb22GfAVxlskWkbMK1G1dZEXwm9Kpr23w8GS+/s32AHVQP5fu93mz088K4mt2+mmIIjjLYFoEbbMi7FYqPy0UJwVxnbSlUT1O13YJbJTKc9c63S/bSXpzd+v1JmItWuXDdUT1+3+0vzPXf//4nB1PT8oL/db7QLzK5PMJFlEcMriO+LI/xH9dgMHXVM42td+SDPXdz4ssguR396IkDwg+Af+AXjjxpxgkAAAAAElFTkSuQmCC", "back_walk_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABE0lEQVR4nO3WsWrCUBSA4RMNhRYsDlIoBbtlEFyLuHUQxbFDX0DFvoBP4JgXCIgv4ODcrburm5tDlyJUBC10SYmIvUIFl557if+3JCcJOck5ublXBAAAAAAAAAAAAAAAAAAAAACA1PE0krQeH+JTrhu+TVSex5TRSvS+WB49/rneHD2figIMLXTWuS/gL0nXry4vZPP1La/TmXd2BXCBr5nMHOd3hfx2a7P76gUYvDzt9zvRWEZhT557odjkaya7rTd/g2gsLsjYTJ6r1MQ2XzNZtlA8iPvdtqS+AI1yECc/vPubaydeWLUAjXIQV0uHXTfNP1ZyVkPAxRWi/583383vsTnvu8bTSpQMBzO2ufgBZO8HDFc98L1+HtkAAAAASUVORK5CYII=", "back_walk_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA9ElEQVR4nO3WsQsBYRjH8ec9N8sgJcVmUFaDzeS6LPwLKH+Skn/BZLDZDFZlMCqbYkFZ6KQLIdPzXuf7md7eu/rd+77P83YiAAAAAAAAAAAAAAAAAAAAAADEjtEIadcql1/eG07nKt/zyNEK2mz3H+d3h+PH57HYgKGFk41cBXxzPJ1lsliZv90Am4xmmFcuvr0MbZ1+wBVlg14rHHf7I7HN1Q7M1v1wPK770mh2xCZHMywoddsLtloB3v0OSKTzEhVGc/G5dEoKmeTT/Gy5jv8l6JWLl2opOqf+yJE/52qE3Ev81v9BG0SJ0Q58/Rmy2f8QyBUlrTacNyuzSgAAAABJRU5ErkJggg==", "front_attack": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABMklEQVR4nO3WsWrCQBzH8b96FFqQOriIUCiCg+BaxK2DVDr6CrW079GxL1AofYXObu5du3URBxGKoBRqwSVy1cSkDZgKuYvp9zPlkpDL/8f/chEBAAAAAAAAAAAAAAAAAAAAACB1MqYmujo/c7bd89R/MfY+LhX3BO161Tk6PJDp5zxwfv61kHKxILZlJUF0l+jA/m0ANmRtTKrbPymUjYJ7r2/fHzvd7ra/A8rEJI+3He/4+uE5EITpNW8lgONKZaeAUhNAvtHyje5/XS9dXG4GaQqgXa86zdqJ3N10JalU3MVHkStGu29vl4Br+P4hYfwdoncFHZ67U6QigOG68NFk5m2Bf+2SvQugtyo0sMWFFX9aKshgPBNbVJwPj9LG/uJ1p/zskrhlxKKwnyCTxQtEltdKWq7l/PXsAAAAAElFTkSuQmCC", "front_fall": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABOElEQVR4nO3WMUoDURCA4cm6CNokRZogCBJIIaS1sLMypLTwAirmAjlBylxAyA0sUqf2CnYSiBYiiEVIoSDCyqzuEpJsOmfC8/9gIG+3mMzs8N4TAQAAAAAAAAAAAAAAAAAAAACEp2SRpNVsJLs720vP3z8+ZXT/YPIfisTi7OLkKFl89vw2NWtMJP9cZJVIx33d2uPrmzZg0DlLi84iK1IL9hRZJSrX62kTNObpWpvg1YjYMpk2Qd32u3Le7aebX+20LYPf91c3Q/dT4U+PwmT6mIeuNb7Gd3noWkKcgFazkRwf7kvv+lI2TWxVfJGtavG7YC9CT6+z/Pf8VOxVK2nDLPeBWBwKz3b8dZMRTANGP19zaXPT4g9qFZm8+N4DSh5JV+0LOh3Wt0DlduauOvKCvQMAsrG+AZcQgVdtxp3FAAAAAElFTkSuQmCC", "front_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABI0lEQVR4nO3XMWvCQBTA8Wd6FBREBxcpCEVwEFyluDmI4tiv0Er9Ho5+gULpV+js5u7q5lIcRBAHcbDgknItjadCcHpJ4/8HIblL4OVeXpI7EQAAAAAAAAAAAAAAAAAAAAAAEielEaRTq/iZ9O1Z/+5rL3eFfNB+H09U7sdlJEaemnXf7hfrjYymM5VkeHLlPLlynkYQW872fT/d4sBoBnvrPwbHvdePn8TYD+TpdVrvv3oCcuXyRYnRZDSDZR9aTmsYHBXb3UN3EhPQqVX8RrUkg5dniRujNfgwN4Xw84mbCM1X26O2Wxl2ZmiTpvUhNBLBwP9mepdUx79PwOj3SR796tzB3xfz8rncSFSMRpCwcnYHbytEcx1gqa++XFFPgiCQb4WqYsY1bbULAAAAAElFTkSuQmCC", "front_jump": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABK0lEQVR4nO3WT0sCQRjH8WfXCAokD14kEETwEHiP7pJEF30Nhr6BXkFH30DgO+jg1ega9AaCDl3CQATpIB4UuhjPULZjeewZ2b4fmP0zuzD7m52dHREAAAAAAAAAAAAAAAAAAAAASKHIqqF6tbLc39v16uaLd7l9fDZ7ht9E1uE19GE+t/He0dvUtFNiCUBDavl3n4B86nWabn9x3V9d11Fh/fbVjhiFT4YunJ65456IOz5vtIKEN+sAdVAu/6j76ggVajKMrRu86V66N64lky+6Mri/8z6RVI6A7HEtcdZ126t2y5sDtBNSNwfUq5XlyVHRC6u0bhvEFuGTHp5eXfhSYfNawFIcquGX8fc6YDiZpf8vMJzMvFGwLtRfIPrrBtZn99BrfwAAZOUDFTRezPCdNVoAAAAASUVORK5CYII=", "front_walk_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABIElEQVR4nO3XMWvCQBTA8ZcYCi1IHVxEEERwEFxL6dahKI5+hbbU79GxX0AQv4JzNjeHrkIHF2mhFIqDdLDQRXnUiGlaur2T5P+DwOU4uHu5u8eLCAAAAAAAAAAAAAAAAAAAAAAAqeNZTXR9ebb+b8xw/Gi2nohnNVG7WV+fHB/F+lafX1IuFhJjXxdLCaczk7X5knG+1US6o7rjh8aXjPOsJ9RcELUHva7c9keJMVb3XwXigAauTmu12Lv67YOk6gqE05mnQUbBq1Krs3usBeJI/vxq23oQlwIXOeCiUZH7u5tdX65YkUwkwfY2+H2TpxfZ73t+/8hOITT5EbwLvuvgq6VkKZzaHBB+H+vYT9H8bens+DsphP4qiiKWwUMgG4JvT3r3o2KRAAAAAElFTkSuQmCC", "front_walk_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABJ0lEQVR4nO3WsWrCUBTG8ZMohRbEDi5SEERwELpK6dahVBz7Cq3oe3TsCwjiKzi7dXd161IcSkE6FIcKXSIn9rZpLK3TUW7+P7hgjgk390suOSIAAAAAAAAAAAAAAAAAAAAAAHgnsJro5qIZ/XfO8GFidj9OYDVR67QeHR0e/Ki9Lz/kpHS8ce7z65uMp48m9xZKxoWScaHlZPrKZzqAQe86DsEN3ee639PDav+rvBgq1mpxCKrTH33VXS1d9y4AF0Ja+ar9feBzAIWzy8TRveyDvFUPcN6oyF339tf/c6WKeBtA63Pxf0kGo42RXuN1IzSbL7YOx6sAZvNFPPRTp3Tx1fJmK+zVFhivX+UoXdOnr7+fXtZhKBeOZR8QyA65EJIsFw+BrABFz2aAx/Yh0wAAAABJRU5ErkJggg==", "front_walk_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABJUlEQVR4nO3WzUoCURTA8TuDCAlBizYiCG1cBG0jhBYuFNv2ChH0SIH0Cm4d2gQJLtoGLUIQBRHEhbgoiGDiDN5BS3B3ztD8f3C58wVnzv12DgAAAAAAAAAAAAAAAAAAAACAfyfQCnTTOI/3ffPw9KL2P16gFah9VotLB8WtZx+fX65yfPTn2+li6aLXd5V/C13GaCav2gCSlPT4vt7XFloFlukgvZ2rBojWo8AXIY3gi4WCRdDO3XVS395302t/rzn/zciOsIo6sdTfw+e0yH1u1oDDi6bLgkA7oPRy/bSaXA/eJknd6z+m768uW6rTIHBGyXvSCJvPxvNVfg5Cg1/JWwitkz8p2x6GCprB1sN6a6UfzZZmw1+Y7rm7tr1cnAPgsuMHz3F9BNCAXiwAAAAASUVORK5CYII="}, "arm_front": {"back_air": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA0UlEQVR4nO3TsQnCQBTG8XfiEBaCXbqMkDYkAzhCRnAAO3cIuIADGOzUwgFsRBQiprAUa+EkwoUEwSrRI/n/4JFL0n33PREAAAAAAAAAAAAAAAAAQHspsUTgOtqck/1RdSqAwHX0crsq3kPPr/xvMpC+WCK7Xd7P4WAk5TByoef/pR0/b8H1sC5G39NidslcP08b/UhiXV6VOvTEEvnNRuOo0ggzTVJimfyG40X88T1LzzKdzGpfASUWMjU3QZhmtHb/vwVR984DAAAAAABAOu4F0+JXOLpYxRYAAAAASUVORK5CYII=", "back_atk1_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAqElEQVR4nO3TsQ3CMBCF4ZfALO68hxdghEzFIER0gZISIUXIBZFTpETUSI7ShQEcLPn/pBvg7t6TAAAAAAAAAAAAAAD4G2dNXEYlctbEr7/ET3tMfoRahauVmeXjp+tZN+/10E5FcdbE+H79TOi7pDWolbFxGtQcGrX3Z1XcAcZpULHxD32XPPpZdz9suPxeGUY+de/XKmVi/fGtlgcAAAAAAAAAQGWZAbe+YVN6kUDlAAAAAElFTkSuQmCC", "back_atk1_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwElEQVR4nO3VMQrCMBTG8RfsIRwEt27du3RxKO0BPELv4OYBPEKO4AEsjjo6ukkWwcHZWYhEEAwdhSTY/w+yJIFHPh4vIgAAAAAAAAAAAAAAAADwo6bIrVsyRk2R26c52EevbYpBZCGLrTcrKcuFtFXthdCfL0r+OYCTMSIyeT/e2R333vknkBhBqBBFXNvrrfb2ZtP54F5b1cFDyCSS2/0qKVChCn0PP9cN3bIb3Ik5C4JK7ScAAAAAAAAAIKPxAoy5MTd17RJsAAAAAElFTkSuQmCC", "back_atk1_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAq0lEQVR4nO3UMQrCMBSH8X+sx3AQhG7dOzv1Ah6ht/IOLoLi6ugoDkoGBQdHJ9dIApVewLxCvx883ph8GSIBAAAAAAAAAAAAAAAAAIB/aaoyxNEYNVUZwvuexuoRXO4D+6G74yHt5+uRdrtqtT/fst7J5Q7vojuW8ZHLFb/drPXxV11UqK6Xv3DL+GgiA0OJj6bK5OS9pEKz+WIw8SZ/QJ91PAAAAAAAgMboC2gwQKtmcu7dAAAAAElFTkSuQmCC", "back_atk2_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAxUlEQVR4nO3VsQnCQBSA4ZebwiKgIKTLCLYSB3CE7GDnAI4QcAEHMFhq4QB2YhHBwlKshScXuBTaii8k/wfHkTTH/ZdwIgAAAAAAAAAAAAAAAPitLE3UD+mjLE30ddnrsyy0LSGc1cLL1UK2h10dRfokSxM9lmvVR9UMywjOYtF4NJbb/do8hy/BIoQTQz5CCOEjWPwSkRjwmyw2xdf7eDCs59lkKuXpHHU2gPd50iFIPs//tvlWacu1CAAAAAAAAACQDnsDsSZK9k3Ah6QAAAAASUVORK5CYII=", "back_atk2_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwElEQVR4nO3UMQrCMBiG4S94CQfBpXTr6Ogq9QLepAdwEzxCj+ABFAdBXLqLoKIg6BlcKwqWgHGRBkJ9H+iQtEvelF8CAAAAAAAAAAAAAAAAAKCxjAKTJnHp2l9sj6bxAdIkLuebpfPdsD/wEsIooMPns7xad9rdj2+KYqVxNqk1hFGAv78d4u12OasXRbqfDtqp9QpRRwSjALlC2AFG2dTbTAguxHW/rp7n+tuQ/JVR4OwD/8WtAwAAAAAAQH49AKGGQ0aO7n1yAAAAAElFTkSuQmCC", "back_hurt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAp0lEQVR4nO3UMQrCMBgG0NjDdOs9ekfBa1jc1MEDuIg4KDo4irMQEYxU97bBvgeBbEl+vi8hAAAAAAAAAAAA8L8mIRN1Vca0b7b7bO7V2+Pj7fhZ7WF0rQiZuFxPg5xbhIykIczXi69KjEJdlfG8W/ZehSJkpl2FlITRpKF+pyAlYdPM4uOwivdm2tkQipCpoT7FwaXIpzS8UjCaCvwaVf8BAACA0Jcn2YVgz+0t4u4AAAAASUVORK5CYII=", "back_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAiUlEQVR4nO3VsQkCYQwG0FxmOWzE0tJWzokVCxub6+2sHMEF5ERRcYKfg7wH3wD5AkkEAAAAAAAAAAAAbQyrxRSVh5/ut6lkCcNn+G9alpBRXEZxGcVlzND+fGz2ETKKyyguYybG8fTOy26zjcPl2pUqYN33sYzHr4RWupiJ/6PXavsAAAAQNT0Bv1Uq23AP1nYAAAAASUVORK5CYII=", "back_strike_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAnUlEQVR4nO3WMQrCMBQG4Gf1LN3cu7g4SL2RmwfwCF6ks6ujuEgHBQdHcRYqVvAIaSHfB/+c5CfhJQIAAAAAAACAtOp52X0TOarnZfduD92r2SctoYgR2u42fSHZFXBs2zjHNKpqmWzNWYxIyoOP8gYMoYjMFUNvgPiNwO55/Sf7MZjlE7g/bn3Wi1U0p8skclPn/A0GAAAAAIBI4gO7xy+Ra13YhwAAAABJRU5ErkJggg==", "back_strike_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAqElEQVR4nO3UMQoCQQyF4bfjHsNCcLERS0tbWQ/kAey8kWKxjc2ApZ1s4RH2AjLCouAJYiD/B8OUIeElEgAAAAAAAAAAAAAAAAAAJtrVoihy82V4lpBDaD/Nf5/lEJIcON8f1W6z/UvtJIdO14vZPUgKLskpqxTUcibnbvwP++N4G0IlIOdO66bRUi+zmrUcmc7muvW9pIlZzUqO/O68RfwBAAAAAFBMbw8rMyYEXEctAAAAAElFTkSuQmCC", "front_air": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAv0lEQVR4nO3VMYrCQBiA0T/oMSwEwc7exsZC9AAewTvY7QH2CHoDCxvBxdYjiIViI2yxJ7DdJYIi2rkJjPgehIQJTPhmQhIBAAAAAAAAAADA//Rbzd/8iARlZU18G7xcr87nQacXX5t9ac98RlbURPc7fIm+l9oiZEXFL+bTOB12sY1KtNvd673vn+P1ejQcJRWfq0YB8R+f44fx2/BU4wt9Ay6LUKs3HsJzKcaX8g2YzCYvEf6WvzwAAAAACP4AT9Y5wEaPOgMAAAAASUVORK5CYII=", "front_atk1_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAArUlEQVR4nO3WoQoCQRSF4cPqQxgWFIRp0zeb5pFsPoCP4IMoNjWaBcMGxQ1GMQtXdkHEKgzMMv8Hp95wOOFKAAAAAAAAAAAAAAD8JXhnbZSj4J296r09N6telFDEPL5YzrtClFsBx7rWSQNV1UzrwzbpEoYxjpaTqcrRWNkK3pk9Lj9JdQVFrMPN/dolW8E7u513vVhBNJSgbwltslvAR9afIQAAAAAAAAAASsYbXCdiT6lRrVAAAAAASUVORK5CYII=", "front_atk1_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAoElEQVR4nO3WIQ7CQBAF0GHP0mBIJRJLyoE4AI4bQRAYDB6HggSB5AKkpJVIQkPLvpeMnez+nUw2AgAAAAAAAAAAAD5SleO6qchRVY7r+nFpq88hpMhc6qJp8+Kbwy6yDKB6u/ztfo0+S78+wN8uvnoAC7CzCTge920NQfpms+3pPFrM5jEtipjEcxAhpC6br5brNpTITZXzDxAAAACi916FHD2hgZADPAAAAABJRU5ErkJggg==", "front_atk1_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAtUlEQVR4nO3RMQrCMBSA4RcP0633yAU8Qo9QcBM3oUeoJ6iDi4OT4NbdRQShYoeO3iClQUWok0Mivv+DEDI93h8RAAAAAAAAAAAAAAAAAAC+YtPEDUc0smni3L3xR10E+7a86gi302EUQVUI+4jwyyEmoQa13dXfdb2X7WYlVZH7QPLPAXbHs8mm2SjC07yYRY9gQgwZlizX5evdNhd/L/KljyQRmVCDPv107OUBAAAAAABEox6wxWzk69gFSAAAAABJRU5ErkJggg==", "front_atk2_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAqElEQVR4nO3SIQoCQRSA4Sd6DIMg2OybTXsBj+Cp9ggewMVg0GK3iUUwmM3CysAKlo27K/p9MGnCzP9mIgAAAAAAAAAAaE8+n1Vpxb+GPy/76lEWvQ5h1PWBKXZz2MbxuItvMOrqoPcrp/gkyxb1EIbx8wPI61f/dLtfYzyZRt8GXcen8E+r5SrK07n1ezQZtB1frIvG/b7jO/sBTXt9xwMAAAAAQPyXF8OjN7aqzhELAAAAAElFTkSuQmCC", "front_atk2_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAs0lEQVR4nO3UQQqBQRgG4PnjGBZK2dnb2FiIAziCO9g5gCu4g40iOzmCFLIRCyewJYpIbMzix/PUNFPfNNP71UwIAAAAAAAAAAAA/K4k1kH1UvH4qjaaraLdE1sSK/hwOn65p1GppbYJyafhB/1eOKyXYR4yoVyuPtR3+81t3Wq2UtmEbMzD7gPfS2v4aE+g022HXL7wFPoqreGjOTfhPLaLyWV+9yH+tPq/BgcAAACA8DVOcPMxuP9eCmMAAAAASUVORK5CYII=", "front_hurt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAx0lEQVR4nO3TPQrCMBTA8Rf1GA6CpVtHR1eJB/AIPYLgJm6CB7I4COLSvQhaHBQdHJ1cIxYtDm6mEsn/B29JIOF9iQAAAAAAAAAAAAAAAAAAvqOj0DxCfKSj0JjroQjviqDfkne1CLVffXS+HKXf7UmS5Uoc0qji0VeX5+tFmbzXY3/arpwb/UpWQD+TTNNleeZ695XN5MezkXSCQG77nWykLs1Wu7iLB7Fzu299ApIsV5PhVP6Nsv3gp113tfsAAAAAAADiozsCYVw3Q/YuyAAAAABJRU5ErkJggg==", "front_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAnUlEQVR4nO3WsQ0CMQyF4YfFKKc0KCU7ZCEGoGMK1uBEcQ0F6emoGIEFUFBuBURkyf8nWeli2U6iSAAAAAAAAAAAAAAAAACA35ScWg9FVHJq7f1aw2MTTMHZPzfvE7/crvLMFJwpOBuZrF8Hbw+hKbjtiCS1Lut6PJw0P54bRToBtS7aT5N2+iikklO7z2eXn6BhQhcPAAAAAIDc+QKlxCfCN2NnEgAAAABJRU5ErkJggg==", "front_strike_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAjklEQVR4nO3WMQoCQQwF0Dh6lu32CLYyntGLbG1raSdbKFhYirUwomBh78JC3oPfJhASSAQAAAAAAADAH9S+a+9ERrXv2nPct8ewm+0QSiS3mrrBYRwjYhnp1L5r7X7+yRzPoERyJZIrkVyZqvBwPC22603MXYnkypTFv1twvV0+SatmfocBAAAAAICYixekwTE8BpXRBwAAAABJRU5ErkJggg==", "front_strike_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAn0lEQVR4nO3WsQnDMBCF4RfZoxg3wWV20EIZIF02Skjhxo0gpXETXGSELBAUzisYgcL9HxzqTuieBJIAAAAAAAAAAAAAAAAAAPvEoc9W8igOfc6f91Y1DiHIuVCyuSV+mx5yOYD4B4c3PAE5F+RcW3qDlMZtvZyvus+vgzzdgJRGnbpOR31Vq1CqsaVtqT/XVYsauRU9f4MBAAAAAFCVfsQBKk1SgYZaAAAAAElFTkSuQmCC"}, "arm_back": {"back_air": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAmUlEQVR4nO3VMQrCQBAF0NGzhDSS0jvkSHYewCMIniOVoI3pbUQsAl5ArJWVpEotacK+B78d+LMLEwEAAAAAAAAAAAB/q6sy9Ylci6dXNySrJdSj4n2et9OQLJZQK9/l+/KX5jBkTuWXUwzpS253m1gXRaziG217jOzUVZk+j3N6N/vhF8zl/C2mHDYu3Fzvk84GAAAAIKbxA0dAfmSklJ1JAAAAAElFTkSuQmCC", "back_atk1_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAtklEQVR4nO3SMQrCQBCF4dGzhG1kS+8wF/AIuYOdB/AIHsRgIahNehsRC0WLlGKtjOyCQSzFQOL+H7xim4U3MyIAAAAAAAAAAAAAAAAAAHxNvbMQSZF6Z3Y9xiQ3BH0rH3LerdIZgnaofP/XH4ai882ifl+qkyRDPzbf9u03cgFluYx5bT8f5VJs9z359wGodzaZjmWYZTKQRz2EpKh3dj+s7VbM4tm3+fQbo6kWBwAAAAAA0hVPfjJvW8CgOQgAAAAASUVORK5CYII=", "back_atk1_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAr0lEQVR4nO3UMQrCQBAF0DF4ljSSe+QCHsFbeQcbQbEQxMbeRqwULSy9gEQ2lbaSQGLeg4FNs+zMHxIBAAAAAAAAAAAA/KIs8ipVDFFZ5FX1vNTV5SFkbVyaGl7tN/X5/rhGl2VDbr7VtU91O+06vf6NbsBn8n1KP2vyssNh+/U9m85ifTyP4t8HUBZ5tVzMYxKvegh9ST8ZRwtS8knX008ae+Dnz64PjQMAAEAM1xuNJEqyHDKHkAAAAABJRU5ErkJggg==", "back_atk1_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAArElEQVR4nO3TsQpCIRTG8XPjPoub7+EL9Ag+VdBrJA1BNXT3loiGoobGaA4MBaE5FBT/PziDy4FPP0UAAAAAAAAAAAAAAAAAAMA/jFY+jPTIaOX96xqn5ksYcy9MYVf7dTw/njep2Zg7fAreQvhilQ9zP23j1Fz/YCYF2bkVdzwP0ssFTNNGumS08p/Lzr/dwh/csonqF/0CtoHqJ0OuRb8v3kp4AAAAAACkT193hk6eQmXG0QAAAABJRU5ErkJggg==", "back_atk2_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAq0lEQVR4nO3WMQoCMRSE4TGnsBBslm1kS0tbiQfyAHbeSLEQxGZ7G7FS3MLSC0gkuYIkPMn/wbQv5IWBSAAAAAAAAAAAAAAAAAAA/MR3bYhRjXzXhvC+p1hcgss5PF54dz7IMlfqoOH1UFUL8H/w+kV6H/O8nkz2v1gFJuOprHK5Bvf9McU6l2vwvGk00yctYbVYan+5jVRjBTbrrdnLZ1X17w8AAAAAAJn2BUmLPaEaWbjuAAAAAElFTkSuQmCC", "back_atk2_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAgUlEQVR4nO3RMQrCMBiG4XgZt94jdxQ8R9a6eAAXEYdCLyDOQiQBIbNSEP7ngQ86tbx/UwIAAAAAAAAAAAB+lad9bUtRw+tj6Qt1hDyEt63XuS/EEbL4Je6fP5djX9j41/1Un+XQn8PEf7TY8QD/Hr/b4qVjdLncNvkGAAAAQPrSG8tViX0mM1NfAAAAAElFTkSuQmCC", "back_hurt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAr0lEQVR4nO3TMQrCQBCF4WfwLNvI3mMu4BFyK/EKNoIhhSAWprcRKyUWll5AVhJUxFJc2LD/B9MOvOGNBAAAAAAAAAAAAAAAAADAz8y70I1yZN6FcDv1k90R7CN8N+1hk+QRihhLv4NermeV01LV/jhSYsYxwq+2tbJk3oVdNR9E9f/+AuZdWC5mmuiuplm/q5+6ItbiV/hUfz/qC7TP2qdc/Wgs1+AAAAAAAEBD8QDy8V9+r+91+AAAAABJRU5ErkJggg==", "back_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAi0lEQVR4nO3WMQrCYAwG0M//LNJFOjq6Sj2x4uDi4u7m5BG8gFQqegIRCnkPsgbykUASAAAAAAAAAAAAfjP03ZjKw4+P+1gyhOEz/LfmGEJLcS3FtRTX/tV4uvf9+Zi5aymupbj2r8aH622x22xzuZzeVXYD1stlVnlmCmMKJdUMfTfLBwgAAABS1wtQPCry6eDzlQAAAABJRU5ErkJggg==", "back_strike_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAApElEQVR4nO3TOwrCQBQF0KdrERtJ6R5mAy7BNSoWgtiktxErRQtLNyCRBJRgKQYS5hy4xTTDvM9EAAAAAAAAAAAAwM9SMa3qRI5SMa2qx7lJdk1IreLrXI+7fJqQBlT8+N8X1oWu9pvP+Xa/RDbS1+T7Pv1ONqAst03elotlrA+nUeTSgPlkErN4Nk0YwvqPu7y879Ov/f1x7f/e9+IBAACAyNILNB5k6CuX4dwAAAAASUVORK5CYII=", "back_strike_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwklEQVR4nO3SsQkCMRSA4Rd0DAtBSJcRbCUO4Ai3g50DuIK4go3gYScWDiCCio1o4QS2JzkwqFhJAjnv/+C4xxUJf3IiAAAAAAAAAAAAAAAAAID/pWIubo0unnO+PUbd61cqZvRivfTf+91ekoegQse/RjvX29nP2SBL7hCaIeNH4+HX8FTjHRUqfj6byP10kJ00pNXuvIU7KcYH+QM+b74Ktx6cNbrY5NPycfNlvyrfUifWaB9du3gAAAAAAABIdTwAxMpDS/NErm0AAAAASUVORK5CYII=", "front_air": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAqElEQVR4nO3UMQrCMBQG4NjDuPUevYBH6KkEr2FxENTB7i4iDooOjuIsRFoUOjjWIuT74CeZAi/8vBAAAAAAAAAAAAAYTpGPY0h5+Hg/xeZM7iOK9/DdDPEJWfgj19u5zcd8swhJtaHIx/GyX7UZqg1Z+CPV7jAqJ2V77zahrpchKUWnCdtqFp/HdXxU05+0IOv7QXryWX5NmhYkswi/SXp4AAAAgNCzFy6BaI63b1UlAAAAAElFTkSuQmCC", "front_atk1_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAnklEQVR4nO3TIQ7CQBSE4ek7S1NDKpG1pByAI/SMNAgMpr4OBQkCyQXIkl3FCR4v7P8lo3czmScBAAAAAAAAAAAAAAAAAHyMfZdyVKOx71J63Uo8SzAFdLycSiHVFuDJFMjjeXdfgSmIeb0202Fyf9cUmMcKTAEty7nEgymQfAb7Yadt22qjt0sJpso1Cuj77vMqfvsbAAAAAACgP/MBa/ovcxMLA+AAAAAASUVORK5CYII=", "front_atk1_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAs0lEQVR4nO3TsQ3CMBSE4YtnidKlZIcswAgZgSnYhAVAFEiIJj0NogJBQckGRrYUBPS2n8j/Sa9xY/t8lgAAAAAAAAAAAAAAAAAASKprGx9GU9S1jffPS5wSITgZsj5sYyCTC+D+uMYpFUJx4cK30/79FXJ+BydDxhbkbIKTAZvjuern/dfaMOyy7O1kTGhBuPysrrVaLpK3wMmIsQW/TUitkkGfrx6CKXsaAAAAAACgP/MCg/tKz1vSQD8AAAAASUVORK5CYII=", "front_atk1_2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAxUlEQVR4nO3UsQnCQBTG8XdOYSHYhHQpLW0lDqAbZASncISACziAwU4sHMBGRSGgA1jZnpwQiaY+72H+P3hc7qr7Xh4nAgAAAAAAAAAAAAAAAAD4X0YUSJPYVt/F/mRa1YA0ie1qu37vx8ORhGpGkPDXw+ZV9l42qj4ZvhgJzIXMl/nHWa/bb0yEr2kwokD1p78bcSsvMogieZyPMp3NvTShIwq4YK6ySRb6KnreBbe62hWLn7wFqtQDty48AAAAAAAAxK8nbRlSVbq2HWQAAAAASUVORK5CYII=", "front_atk2_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAtElEQVR4nO3WMQoCMRCF4efgISwEm2Ub2dLSVtYDeIQ9ggew80aKhY3N9nZWCltYegGJJKA3MAnk/2DIdEMeQ4gEAAAAAAAAAAAAAAAAAIijbWrnSyVqm9q51z1UzBBMGfAXPlxOSWabMjE8H7/ehxFrC0wZOF5vo27TJZltykiKLTAVbqyMTCezcPb9OdpMUyb8O7BersLlF1Wlud5lBfANYbfdh75obck/QgAAAAAAoH/7AB5rMz78Qg1BAAAAAElFTkSuQmCC", "front_atk2_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwElEQVR4nO3VMQrCMBTG8a/iIRwEl+Lm6Ogq9QB6gx7BU3iEghfwABY3cfAALioKFTs4OrlGWmwG99Rg/z94vGTLS94jEgAAAAAAAAAAAAAAAAAAzkWDvlGTizfPzBS5CjWtePMVdV1EWx7IHze77nZ6ZV7vNmWejMYmPZwD/bPo89r349ZG1Qn7dOm0EwJ5pCg0WSV2n2dXDcNQr8tJs/lCLjqhJY8UBcbT+NfH8GskXI+A1xr3JQIAAAAAAKgGb8MgZiY1WDGXAAAAAElFTkSuQmCC", "front_hurt": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwklEQVR4nO3TsQnCQBjF8Ze4SkiX0h2ygCNkBAewc4eM4AAGC0Fs0gdBg0LEFJZWtpE7iIXWFw/z/8Fxx3Xf43sSAAAAAAAAAAAAAAAAAGAYaRJ35miM0iTuukdjz5AhhPLQer+xgYwugPZ+/UkI3jAD3467dxWGqEMoz7nehFAeMlXo61CWW3u7CiGQZ8yg+Sq377a5aBpFep5POmiixXypoqqDv96AoqqDbJZ9/bsY3ssN6H2uvIvhAQAAAAAANEYvEgdQ7GnbGIQAAAAASUVORK5CYII=", "front_idle": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAf0lEQVR4nO3WsQ3CMBCG0ZNnidKglOyQKVkDREFDQcbICCyAjOwhLEv3nvQP4K85RwAAAAAAAAAAADDGvq21LTLat7XW79k3MkKJCd3fzx4kbYCRSiRXIrkSyZVIrsREjuPVlzbAdVniEr/hEabRbv/nccv7G2xSPx4AAABiiD9vtiJcAHt3bwAAAABJRU5ErkJggg==", "front_strike_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAtElEQVR4nO3TsQ3CMBCF4RfPEqVLSUmLwgCMkBGYgk1YAESBhGjS0yAqEBSU2SDIloJggBwn8n/SNW7Ofr6TAAAAAAAAAAAAAAAAAAA2qrLoYmmMqrLouvaayjKEIIc2x10KZHQBPJ63VNYhuBEffD8f3qtgsQ5BDvVTYDEJQY5sT5esXtRfZ02zH7RnkGPx8ZM813q1HGwKgpzpp2A+nZn0y+TY56/HYH57GwAAAAAAAP2HFyz1R89bV9zWAAAAAElFTkSuQmCC", "front_strike_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAxUlEQVR4nO3VsQnCQBTG8e8yhYVgE9KltLSVOIBukBGcwhEyggMoFjY26a0UBYUUTmAbOeFCiG0Sjvj/wcE7rjjex4MnAQAAAAAAAAAAAAAAAMCAGXkkiaPS1fvz1fxVAEkclbvTobovZnP1EYaRJ81n2+xbj0eTn3cXRhdBGHmiHoLTDMMG0XYIgTxhG0uXqexxitezqvP82Mm/Rh5qTkPxuGsahnrfLlqtN61OQSAPuWnog5HH6mux7/UIAAAAAAAAaJg+r/03Lw+axS4AAAAASUVORK5CYII="}, "weapon": {"sword_atk1_chop": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABRUlEQVR4nO3Wv0vDQBTA8Zfg4FKwUHBwDMRJXNqlbg4SxyAIgmOnUrpLN5eCf4B/gZPg5tDNXUcFwbluDqKo45VLmxI7SXKFe/b7mZKD5Hg/7iUiAAAAAAAAAAAAAAAAAAAAAP4q2YnN1/O5MZ8jI54Ll72BTYSsYgL63Vv5Ht/PO0I8Fbh4iQ3wctiS7tnDfG2rsSGvb+8yenxxsof3CRARsUnYjLbl6PgqW/c9eGdHIA90cLeb3d9cn3rf+s47oH7Qya6jOJbBSVPWg6fpBrUkWJkhGM2CT/f25bDdV9EFa66qb4NfPBZBLRHfhVUeXqxuXn0Nw8/ZEajPqm+D1yh0Mfhy2qrvpAOKg09b8KUTUBx8Wlvf6WcwVVr9Sgkotr5mYZn2b/Yufq1prX4pNgE/H2Pj+x/eUo9AqrztK0n+SeUhUxO9n2NIB8grrgAAAABJRU5ErkJggg==", "sword_atk1_sweep": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABU0lEQVR4nO3YPUsDQRAG4PfmFyjYWQauUmxSaWcRYmkpWloFSSlIOiGNpVjaC4LYBAwWWmmh6SyEA61iJyiKH93KHKzsD5CZxbwPhOO2mZvZmU0uABERERERERERERERERERERERERHRHwnvw/Bxvxva82VABsQymCaOzIhVoLjjn+MbdDsD5KKwDqiFmJ2ZwtPz6+/a2fU+Vha7GN5V5s/jQougHx0JPRPi/b8/A1RM9OR4o77/DnP11Wv3C+uAj4P1ugC9ywU0yhK9tWa9vrq07FIE8dj9zs4tXs4P8VBV6B+N4KnwCqzFmG5t1l2gtBM8ukDgRBONXZCyPgwFGYijcHp1YR5b4Ch2QUqLYNkFAmfpKHgciIKMpKNg1QWCDHiOQoFMpMk2t/YwOtg2+UoUZEKTTRPWIuTyn4E5TfzrbWzygiTIlP4qnHjtSR0BIoKVH7dIlQ5hT+PoAAAAAElFTkSuQmCC", "sword_atk1_windup": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABUUlEQVR4nO3XMUsDQRCG4bnFShsFO60UDizsQgqFQCwkgo0IgrWWYi+ChZDG32Arlrap7GzURi2EA7v8AkUtT2bhwCKgZPdwx3sfOA4OZmAn300SEQAAAAAAgF/qLeelNNnn67DUy/og3LiFW6tr8h+4kGIdQuvgzL8OVpPgQoqvbq79fWZ9X6xyoQ2Od1uymOd+CBZT4MYtHDwV2ag9YG0ILrSBDuF7CqxxIcWaglHPLaXAxWhiOQUutMGoFFhaiC5Gk2ohVimwZKKuxj4Fcl7+tC/+WhazmcZefxz1L+/lpSik333wzxc2L5I8fG0JOOo8inREtnfuJHVZzGbl28BHfmPlUFKPftQlqKqtXx1+bnbaX1a+DaLTg+912+X782nS/xSzuhrrwfU+Od+Wj+GtTC2dJP0qRKefug6h2guN00s49gAAAAAAAAAAAIA0zxfBpWg7cI5XHwAAAABJRU5ErkJggg==", "sword_atk2_swing": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABC0lEQVR4nO3VMWvCQBjG8VfJ5FRBcNBNyNZNHHRzkDiKIEg7dvYLdPYL+BkEQRCXQju52aF20q1DJ90cpEPrpHJXLy3xLMVOZ/8/SO5yb2543oNEBAAAAAAAAAAAAAAAAAAsgkt/K2cg/pfNr3dX22gjXGtM/JRNx0Kq9UH/WlziHSv8dJLJyo0e07m1iEzCd1X4RLYgTjcg2IcxIW1yvr+fTfU9k7oIa+/zJ3GJFz1pE/wr5KHbZl6Pm8VnAxbLVVirN7riktjH21w3oN17toa0qZXKerx/7Ei12JKH2UtMPatmmrkrPBNGGY5H4fz7epQKaftGuBb+gAplLvkl1357AAAAAAAAgPxvO0xTR1YBFUiqAAAAAElFTkSuQmCC", "sword_atk2_windup": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABIElEQVR4nO3XsWvCUBDH8WtxKHTp0M1dcOjY/yF7wcnRP0McBHHvUCg4FgqFopvSwU0HcXMQA24uTkJL2zHlHjxJBzd590i+HwjJlOR3d++FiAAAAAAAAAAAEJ3krpb9fu4yPZ/zvhWJnA88nE2ltF1vP4/cce7uRy1U+EuJkIbNj/w2TWWySi9KUYAkF773unThDx+D415Q6AIkJ8Krwk9AYhDetAAa2I+1VXjzCRjPH03DR7EE3t+a/8J7IcKrIA85RbvvC9AaXLmzdj9UeNMC5D9rvggPjZeg4U2WgAb/Xndd+OrtzTH4fruRp/596NeR4BPgw/vgSruen4jCL4Hsa5L97Bbu+rreMd2HzOgklOrvDgAAAAAAAAAAQIz9ATVKrBxdncgGAAAAAElFTkSuQmCC", "sword_hold": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABLUlEQVR4nO3XIUsEQRjG8Xc2CSIo2C4KC4ZrNptBpoogiCa55DcQxeBHsAlG08HBhQPvE1iMBsFg0mYQRYwj88IbVATBmXX27v+D4XbK7j7P7M6xIgAAAAAAAAAAAAAAAAAAAMCf+W4d3m5PghSkavJig/6u/obXcTEluJyrbcfjmztncyshml0+znb933I5T34/2tHQ+wfXOu8szsvj07OWsLl1ocXIP3M5Tx5X3VY8BjYlBM++B/huHRbWe9I7n9G5FVFS+GwFWPhoqa6l6uzp8eXV6ae9YSIL8F/CH26vfHsFJrYA/0P4jdU1ffTdnC/q8Y9cU+GlUNU0h09SQJvDJ90D2hheUqx+HEdnw/D+8qCjtL+5bPw0h49iWAttQ1rIpfraS3ZHAABpzAd+VYdeAcRyQQAAAABJRU5ErkJggg==", "sword_strike_down": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABL0lEQVR4nO3WoUsEQRTH8beDf4CC7aIwbU1atF2QMYogCCYxGe4f0GS5bjgQjCZBMAgeRoPBahDMZxMURY0j7+AOtQn7lrfe9wPLtLf85r2ZXREAAAAAAAAAAAAAAAAAAADgz1IZ8/v9Qc5v/eEqDgXL4v27h0LXj8HteENkkjZArW+cSGf3QrwqLIp+73Rrdloen17G0/DvJyCVMfe6i6KP0vCeFZbdPzvd+nEUlLdJCFUXHAWcWdmR7vW8hNb2MPzlzaHLi3CqrhetLnXcdd/sDtDu/+YxvOlncC5G2dtckLXlttvwtfwHeBcsxn/U/SYIlsW9j7/iCIjR+Gv3myBYFvc+/pVugIZ9vjqWiZXKmPePzrOu3n53a5HKmD9fB40LH6oo0rTQJhKbII30BUj7ZbcvFzcEAAAAAElFTkSuQmCC", "sword_strike_up": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA/UlEQVR4nO3WoWtCURTH8d87cWmCbcuvWfcnDLsgCItLqyZh1bJoWxcGwtCmaW0L25pJwebCwCAGjU+eMJuCsPu8cL6fct974Zx7zr33cSUAAAAAwP+rVtJMnovfrOZZzE0wOWehE7RfvuWyAdVKmvXf3xQ7KyJJ6fY+2p+hyTmTcybnTM6ZnLNzT8DFVfjxeZA1mk9RXolNzpmcs1CBD2332I5BEiJoXuTwo7N7Xs8/999/Z5Pd+ND60mg8DZL7VEmowMdWOpbic8Enkjfiqnypn8UyqsL/mJxLQq/+a+9u/16rd6PbBVZEkovrmyLSAAAAAAAAAAAAAAB0wBYZ8T9/MhXD9gAAAABJRU5ErkJggg=="}, "rope": {"rope_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACuElEQVR4nO2az2sTQRTHvztshUrRIlIaBNMQG0Robx4siGIlRo+CPehRAv4DvenJY/8BIQdP9dCC4EkRFURQsLcWSgmEmKK0B5EKoqCHlLfurNN0s+bHzswm+z6wZHYyu7PfN/Nm5s0uwDAMwzAMwzAMwzAMw6QLx1bFpZlC839lXmxUtT+fC0vC78zPIjc1GeTXP+16vzLPP2/qNoQDy8JV3nzY8n5zmfGgzONnH/Hl6542IzgwJD5KeKsRrlw4eyCPesPy63UtRnCQIPFR6DKCgAEuT5/p+x79GtCKAUp+66uDXK9kR8a88aOT2SNRs0BuahKNPz96bkESTvy7x/pgToPZkTFPhExLZF5Y+aj/B84ADUVIJ6LalfFdqhnXYChgiH7HAF2DoQvNtK7wkobQeXPqpjR3JxlhopKwNb9tVzK2Drh/t9jXg6vXUbq+s4c4ERgA4m5144NgXWk1SpNLhAU9ode3XPt+czvWeMCBZsgN5s6dDv1Phr1qC6vjhQyPJXGLNxoOy3Q7Y0RBwomBDIdbCQtmVpYWg/TC4tKha4ZiR0iKf/7uJSS3H64gXyigVq0GefL8yYMF7/z6xaJWA7gwzOfdRpD+trPtCaajXbnKagXlW+XY1v6JcoHmTBHnL10NLbf29hWcjb+9RWcPEDAMielGkO6tcQELUC+Ian3iRKb72WJoV4I6EUg5wlbFUd1fzhAmcGEJde5P3cvRUodb2yZejjqwIP7UyfGOyup8J2hlDCh1Id4ULhIAtfTR0SMH8n7++j2c3we0gwSrmBBvxQDU2qob0DmFw99rNZQfPTUm3No6oHLvpidaHnIP4Hg+Dxu4pivMXLuBip+mFlf3B4DDmyG6cWytAcgNshPHtO/5JXIQnOthX1AXAinHNV2h38UDN0jth5JhMYFp/2cYBqlnHw5zLj6l38ljAAAAAElFTkSuQmCC", "rope_1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACq0lEQVR4nO2az2vUQBTHX4ZUsBRZpEiXgttFXURYbx4UxGLLdvXooQc9qth/oDc99dh/QFDwpIceLAWhUlQoQgV7a0FkQdYtSnsQ6UFaqIeUN2TidE3j2s3Mm03eB0Ims5NMvm9+vpcFYBiGYRiGYRiGYRiGYfKFR1VxvVoJ/lXm9XrD+Pv5QCT8zthFKI8MRfnNr1vyrPLC68C0ITwgFq7z7sNneS4XC1GZZwsf4fuPbWNG8MCS+CTh7Ua4fvn8gTzsDc/frhkxggcOiU/ClBEEWGD03Nmun9GtAUkMUA9bX5/kjkqpb0DOH52sHk6tAuWRIWj9/nXkFkThyJ9nrPXmMljqG5AiVFqh8uLKJ/3ecwZoaUI6EXVYmXBIBWlNhgIs0e0cYGoy9MEw7Ts81xAmH47dFNdulxE2Konb81MPJWv7gId3a129uH4fppub25AmAnqAtFvd+iTY1FoN0zgk4pye2Pvb7l35tJGqP+CBYXAYXLlwOvY35fbqLazPF8o9VqQt3qo7rNKHGSMJFI70pDvcTpwzMzc7HaUnp2f/uicTESElfvH9Eihuz8zBmUoFvjQaUZ66fvFoUl7fuFozagABFkEhKOjbVksK+7m5EYlWh0KVy2RUuB4Og6Bag0vXxmPLrC6/AW99yXhkWAABNsLdThugXq0ESa2PnCz+/2qR2Z2gSQTkHEFVcVL3R9QKkblPYwp97afEo6i009B2Zj+ODg8WwBUE5BwfHAG/APcfPxZd7+zu5bcH7OzuWdstCnCg5fF4MnVLCrcp3olVAIUj9x+/JPETBBCgRKL44sRNeVAhyGoGOCD81fzT/P5LbFGLEpmOADm1DA4PFqB06gTMPLhH9g4+RaVJoXLbCMg5PkWl4RiXcwC1X+CR1h7jGboUL2QgB+wDJEog9JvI3e0AAAAASUVORK5CYII="}};
+let POSE_TABLE = {"version": "hero_classic_modular_v1", "canvas": [64, 64], "layer_order": {"front": ["arm_back", "legs", "torso", "head", "arm_front", "weapon"], "back": ["weapon", "arm_front", "legs", "torso", "head", "arm_back"]}, "animations": {"idle_front": {"side": "front", "fps": 4, "frames": [{"head": "front_idle", "torso": "front_idle", "legs": "front_idle", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 0}, {"head": "front_idle", "torso": "front_idle", "legs": "front_idle", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 1}]}, "idle_back": {"side": "back", "fps": 4, "frames": [{"head": "back_idle", "torso": "back_idle", "legs": "back_idle", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 0}, {"head": "back_idle", "torso": "back_idle", "legs": "back_idle", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 1}]}, "walk_front": {"side": "front", "fps": 7, "frames": [{"head": "front_idle", "torso": "front_idle", "legs": "front_walk_0", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 1, "dx_af": -1, "dx_ab": 1}, {"head": "front_idle", "torso": "front_idle", "legs": "front_walk_1", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 0}, {"head": "front_idle", "torso": "front_idle", "legs": "front_walk_2", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 1, "dx_af": 1, "dx_ab": -1}, {"head": "front_idle", "torso": "front_idle", "legs": "front_walk_1", "arm_front": "front_idle", "arm_back": "front_idle", "weapon": "none", "dy_upper": 0}]}, "walk_back": {"side": "back", "fps": 7, "frames": [{"head": "back_idle", "torso": "back_idle", "legs": "back_walk_0", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 1, "dx_af": 1, "dx_ab": -1}, {"head": "back_idle", "torso": "back_idle", "legs": "back_walk_1", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 0}, {"head": "back_idle", "torso": "back_idle", "legs": "back_walk_2", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 1, "dx_af": -1, "dx_ab": 1}, {"head": "back_idle", "torso": "back_idle", "legs": "back_walk_1", "arm_front": "back_idle", "arm_back": "back_idle", "weapon": "none", "dy_upper": 0}]}, "attack1_front": {"side": "front", "fps": 9, "frames": [{"head": "front_idle", "torso": "front_lean_back", "legs": "front_idle", "arm_front": "front_atk1_0", "arm_back": "front_atk1_0", "weapon": "sword_atk1_windup", "dy_upper": 0}, {"head": "front_idle", "torso": "front_lean_fwd", "legs": "front_attack", "arm_front": "front_atk1_1", "arm_back": "front_atk1_1", "weapon": "sword_atk1_chop", "dy_upper": 1}, {"head": "front_idle", "torso": "front_lean_fwd", "legs": "front_attack", "arm_front": "front_atk1_2", "arm_back": "front_atk1_2", "weapon": "sword_atk1_sweep", "dy_upper": 1}, {"head": "front_idle", "torso": "front_idle", "legs": "front_attack", "arm_front": "front_atk1_2", "arm_back": "front_atk1_2", "weapon": "sword_atk1_sweep", "dy_upper": 0}]}, "attack2_front": {"side": "front", "fps": 9, "frames": [{"head": "front_idle", "torso": "front_lean_back", "legs": "front_idle", "arm_front": "front_atk2_0", "arm_back": "front_atk2_0", "weapon": "sword_atk2_windup", "dy_upper": 0}, {"head": "front_idle", "torso": "front_lean_fwd", "legs": "front_attack", "arm_front": "front_atk2_1", "arm_back": "front_atk2_1", "weapon": "sword_atk2_swing", "dy_upper": 1}, {"head": "front_idle", "torso": "front_idle", "legs": "front_attack", "arm_front": "front_atk2_1", "arm_back": "front_atk2_1", "weapon": "sword_atk2_swing", "dy_upper": 0}]}, "attack1_back": {"side": "back", "fps": 9, "frames": [{"head": "back_idle", "torso": "back_lean_back", "legs": "back_idle", "arm_front": "back_atk1_0", "arm_back": "back_atk1_0", "weapon": "sword_atk1_windup", "weapon_z": "front", "dy_upper": 0}, {"head": "back_idle", "torso": "back_lean_fwd", "legs": "back_attack", "arm_front": "back_atk1_1", "arm_back": "back_atk1_1", "weapon": "sword_atk1_chop", "weapon_z": "back", "dy_upper": 1}, {"head": "back_idle", "torso": "back_lean_fwd", "legs": "back_attack", "arm_front": "back_atk1_2", "arm_back": "back_atk1_2", "weapon": "sword_atk1_sweep", "weapon_z": "back", "dy_upper": 1}]}, "hurt_front": {"side": "front", "fps": 4, "frames": [{"head": "front_hurt", "torso": "front_lean_back", "legs": "front_idle", "arm_front": "front_hurt", "arm_back": "front_hurt", "weapon": "none", "dy_upper": 0}]}, "rope": {"side": "back", "fps": 5, "whole": true, "frames": [{"whole": "rope_0"}, {"whole": "rope_1"}]}}};
+
+const PALETTE = [
+  '#482d26', '#c4906c', '#a37054', '#825744', '#e39578',
+  '#fcdcc2', '#f2b89b', '#cd8469', '#fff0e0', '#e3d8c1',
+  '#c7b89e', '#7c99b0', '#59738a', '#475a6c', '#634136',
+  '#fff7eb', '#d8dee9', '#88a0b8', '#f0c040', '#ffffff'
+];
+
+const LAYER_META = [
+  { key: 'head',      label: '머리 (head)',       cat: 'head' },
+  { key: 'torso',     label: '몸통 (torso)',      cat: 'torso' },
+  { key: 'legs',      label: '하체 (legs)',       cat: 'legs' },
+  { key: 'arm_front', label: '앞팔/검팔 (rArm)',  cat: 'arm_front' },
+  { key: 'arm_back',  label: '뒷팔/보조팔 (lArm)', cat: 'arm_back' },
+  { key: 'weapon',    label: '무기 (weapon)',     cat: 'weapon' },
+];
+
+// Each part is stored as an offscreen 64x64 canvas so pixel edits are instant & live!
+const PART_CANVASES = {};
+const UNDO_STACK = [];
+let curAnimKey = 'walk_front';
+let curFrameIdx = 0;
+let editLayerKey = 'legs';
+let curTool = 'pen';
+let curColor = '#482d26';
+let layerVisible = { head: true, torso: true, legs: true, arm_front: true, arm_back: true, weapon: true };
+let playing = false;
+let playTimer = null;
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.style.opacity = 0, 1800);
+}
+
+async function loadAllParts() {
+  const promises = [];
+  for (const [cat, items] of Object.entries(EMBEDDED_PARTS)) {
+    PART_CANVASES[cat] = {};
+    for (const [name, url] of Object.entries(items)) {
+      promises.push(new Promise(res => {
+        const im = new Image();
+        im.onload = () => {
+          const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+          c.getContext('2d').drawImage(im, 0, 0);
+          PART_CANVASES[cat][name] = c;
+          res();
+        };
+        im.src = url;
+      }));
+    }
+  }
+  await Promise.all(promises);
+}
+
+function initPalette() {
+  const wrap = document.getElementById('palette');
+  wrap.innerHTML = '';
+  for (const hex of PALETTE) {
+    const d = document.createElement('div');
+    d.className = 'swatch' + (hex === curColor ? ' sel' : '');
+    d.style.background = hex;
+    d.title = hex;
+    d.onclick = () => {
+      curColor = hex;
+      document.getElementById('colorPick').value = hex;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('sel'));
+      d.classList.add('sel');
+      setTool('pen');
+    };
+    wrap.appendChild(d);
+  }
+}
+
+function setTool(t) {
+  curTool = t;
+  ['pen', 'era', 'pick'].forEach(id => document.getElementById('t_' + id).classList.remove('active'));
+  const map = { pen: 't_pen', eraser: 't_era', picker: 't_pick' };
+  document.getElementById(map[t]).classList.add('active');
+}
+
+function getAnim() { return POSE_TABLE.animations[curAnimKey]; }
+function getFrame() {
+  const a = getAnim();
+  if (curFrameIdx >= a.frames.length) curFrameIdx = 0;
+  return a.frames[curFrameIdx];
+}
+
+function getLayerOffset(f, key) {
+  const ox = f['ox_' + key] || 0;
+  const oy = f['oy_' + key] || 0;
+  const dyUp = (key === 'head' || key === 'torso' || key === 'arm_front' || key === 'arm_back' || key === 'weapon') ? (f.dy_upper || 0) : 0;
+  const dxArm = (key === 'arm_front') ? (f.dx_af || 0) : ((key === 'arm_back') ? (f.dx_ab || 0) : 0);
+  return [ox + dxArm, oy + dyUp];
+}
+
+function getLayerOrder(anim, f) {
+  const base = [...(POSE_TABLE.layer_order[anim.side] || POSE_TABLE.layer_order.front)];
+  if (f.weapon_z === 'front') {
+    const idx = base.indexOf('weapon');
+    if (idx >= 0) { base.splice(idx, 1); base.push('weapon'); }
+  } else if (f.weapon_z === 'back') {
+    const idx = base.indexOf('weapon');
+    if (idx >= 0) { base.splice(idx, 1); base.unshift('weapon'); }
+  }
+  return base;
+}
+
+function compositeFrame64(anim, f, includeWeapon = true, flipX = false) {
+  const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  if (flipX) { g.translate(64, 0); g.scale(-1, 1); }
+  if (anim.whole && f.whole) {
+    const part = PART_CANVASES.rope[f.whole];
+    if (part) g.drawImage(part, 0, 0);
+    return c;
+  }
+  const order = getLayerOrder(anim, f);
+  for (const key of order) {
+    if (!layerVisible[key]) continue;
+    if (key === 'weapon' && !includeWeapon) continue;
+    const pname = f[key];
+    if (!pname || pname === 'none') continue;
+    const part = PART_CANVASES[key] && PART_CANVASES[key][pname];
+    if (!part) continue;
+    const [dx, dy] = getLayerOffset(f, key);
+    g.drawImage(part, dx, dy);
+  }
+  return c;
+}
+
+function render() {
+  const anim = getAnim();
+  const f = getFrame();
+  const flipX = document.getElementById('chkFlip').checked;
+  const comp = compositeFrame64(anim, f, true, flipX);
+
+  const mainCv = document.getElementById('mainCv');
+  const mg = mainCv.getContext('2d');
+  mg.imageSmoothingEnabled = false;
+  mg.clearRect(0, 0, 512, 512);
+  mg.drawImage(comp, 0, 0, 512, 512);
+
+  if (document.getElementById('chkGuide').checked) {
+    mg.strokeStyle = 'rgba(255, 90, 90, 0.55)';
+    mg.lineWidth = 1;
+    mg.beginPath(); mg.moveTo(0, 62 * 8); mg.lineTo(512, 62 * 8); mg.stroke();
+    mg.strokeStyle = 'rgba(110, 210, 255, 0.45)';
+    mg.beginPath(); mg.moveTo(0, 47 * 8); mg.lineTo(512, 47 * 8); mg.stroke();
+  }
+
+  const mini = document.getElementById('miniCv').getContext('2d');
+  mini.imageSmoothingEnabled = false;
+  mini.clearRect(0, 0, 128, 128);
+  mini.drawImage(comp, 0, 0, 128, 128);
+
+  renderTimeline();
+  updateEditInfo();
+}
+
+function updateEditInfo() {
+  const anim = getAnim(), f = getFrame();
+  if (anim.whole) {
+    document.getElementById('editInfo').textContent = 'rope / ' + (f.whole || 'none');
+  } else {
+    document.getElementById('editInfo').textContent = editLayerKey + ' / ' + (f[editLayerKey] || 'none');
+  }
+}
+
+function renderAnimSelect() {
+  const sel = document.getElementById('animSel');
+  sel.innerHTML = '';
+  for (const k of Object.keys(POSE_TABLE.animations)) {
+    const opt = document.createElement('option');
+    opt.value = k; opt.textContent = k;
+    if (k === curAnimKey) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function renderLayerControls() {
+  const anim = getAnim(), f = getFrame();
+  document.getElementById('sideSel').value = anim.side || 'front';
+  document.getElementById('fpsIn').value = anim.fps || 7;
+  const wrap = document.getElementById('layerControls');
+  wrap.innerHTML = '';
+
+  if (anim.whole) {
+    const card = document.createElement('div');
+    card.className = 'layer-card editing';
+    const opts = Object.keys(PART_CANVASES.rope).map(n => `<option value="${n}" ${f.whole===n?'selected':''}>${n}</option>`).join('');
+    card.innerHTML = `<div class="layer-head"><b>통짜 프레임 (rope)</b></div>
+      <select onchange="getFrame().whole=this.value;render()">${opts}</select>`;
+    wrap.appendChild(card);
+    return;
+  }
+
+  // Upper body bounce quick control
+  const upCard = document.createElement('div');
+  upCard.className = 'layer-card';
+  upCard.innerHTML = `
+    <div class="layer-head"><b>상체 통째 Y 오프셋 (숨쉬기/바운스)</b>
+      <div class="nudge">
+        <button onclick="nudgeUpper(-1)">-1</button>
+        <span style="min-width:20px;text-align:center;">${f.dy_upper || 0}</span>
+        <button onclick="nudgeUpper(1)">+1</button>
+      </div>
+    </div>`;
+  wrap.appendChild(upCard);
+
+  for (const m of LAYER_META) {
+    const card = document.createElement('div');
+    card.className = 'layer-card' + (editLayerKey === m.key ? ' editing' : '');
+    const names = ['none', ...Object.keys(PART_CANVASES[m.cat] || {})];
+    const curVal = f[m.key] || 'none';
+    const opts = names.map(n => `<option value="${n}" ${curVal===n?'selected':''}>${n}</option>`).join('');
+    const [dx, dy] = getLayerOffset(f, m.key);
+    const wzHtml = (m.key === 'weapon') ? `
+      <select style="font-size:11px;padding:2px 4px;" onchange="getFrame().weapon_z=this.value;render()">
+        <option value="" ${!f.weapon_z?'selected':''}>기본 Z</option>
+        <option value="front" ${f.weapon_z==='front'?'selected':''}>맨앞</option>
+        <option value="back" ${f.weapon_z==='back'?'selected':''}>맨뒤</option>
+      </select>` : '';
+    card.innerHTML = `
+      <div class="layer-head">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" ${layerVisible[m.key]?'checked':''} onchange="layerVisible['${m.key}']=this.checked;render()">
+          <b>${m.label}</b>
+        </label>
+        <div style="display:flex;gap:4px;align-items:center;">
+          ${wzHtml}
+          <button class="${editLayerKey===m.key?'active':''}" style="padding:2px 6px;font-size:11px;" onclick="editLayerKey='${m.key}';renderLayerControls();updateEditInfo();">✏️ 편집</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <select style="flex:1;" onchange="getFrame()['${m.key}']=this.value;render();updateEditInfo();">${opts}</select>
+        <div class="nudge">
+          <span>X:${dx}</span>
+          <button onclick="nudgeLayer('${m.key}','x',-1)">◀</button>
+          <button onclick="nudgeLayer('${m.key}','x',1)">▶</button>
+          <span>Y:${dy}</span>
+          <button onclick="nudgeLayer('${m.key}','y',-1)">▲</button>
+          <button onclick="nudgeLayer('${m.key}','y',1)">▼</button>
+        </div>
+      </div>`;
+    wrap.appendChild(card);
+  }
+}
+
+function nudgeUpper(d) {
+  const f = getFrame();
+  f.dy_upper = (f.dy_upper || 0) + d;
+  renderLayerControls(); render();
+}
+function nudgeLayer(key, axis, d) {
+  const f = getFrame();
+  const field = (axis === 'x' ? 'ox_' : 'oy_') + key;
+  f[field] = (f[field] || 0) + d;
+  renderLayerControls(); render();
+}
+
+function renderTimeline() {
+  const anim = getAnim();
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  anim.frames.forEach((fr, idx) => {
+    const div = document.createElement('div');
+    div.className = 'thumb' + (idx === curFrameIdx ? ' cur' : '');
+    const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+    c.getContext('2d').drawImage(compositeFrame64(anim, fr, true, document.getElementById('chkFlip').checked), 0, 0);
+    div.appendChild(c);
+    const sp = document.createElement('span'); sp.textContent = 'f' + idx;
+    div.appendChild(sp);
+    div.onclick = () => { curFrameIdx = idx; renderLayerControls(); render(); };
+    tl.appendChild(div);
+  });
+  const btns = document.createElement('div');
+  btns.style.display = 'flex'; btns.style.flexDirection = 'column'; btns.style.gap = '4px';
+  btns.innerHTML = `
+    <button onclick="dupFrame()">+ 복제</button>
+    <button onclick="delFrame()">🗑 삭제</button>`;
+  tl.appendChild(btns);
+}
+
+function dupFrame() {
+  const anim = getAnim();
+  anim.frames.splice(curFrameIdx + 1, 0, JSON.parse(JSON.stringify(getFrame())));
+  curFrameIdx++;
+  renderLayerControls(); render();
+}
+function delFrame() {
+  const anim = getAnim();
+  if (anim.frames.length <= 1) return;
+  anim.frames.splice(curFrameIdx, 1);
+  curFrameIdx = Math.max(0, curFrameIdx - 1);
+  renderLayerControls(); render();
+}
+function selectAnim(k) { curAnimKey = k; curFrameIdx = 0; renderLayerControls(); render(); }
+function setAnimSide(s) { getAnim().side = s; render(); }
+function setFps(v) { getAnim().fps = Math.max(1, Math.min(20, v || 7)); if (playing) { togglePlay(); togglePlay(); } }
+function addAnim() {
+  const name = prompt('새 동작 이름 (예: jump_front):');
+  if (!name || POSE_TABLE.animations[name]) return;
+  POSE_TABLE.animations[name] = JSON.parse(JSON.stringify(getAnim()));
+  curAnimKey = name; curFrameIdx = 0;
+  renderAnimSelect(); renderLayerControls(); render();
+}
+function togglePlay() {
+  playing = !playing;
+  const btn = document.getElementById('btnPlay');
+  btn.textContent = playing ? '⏹ 정지' : '▶ 재생';
+  clearInterval(playTimer);
+  if (playing) {
+    const fps = getAnim().fps || 7;
+    playTimer = setInterval(() => {
+      curFrameIdx = (curFrameIdx + 1) % getAnim().frames.length;
+      render();
+    }, Math.round(1000 / fps));
+  }
+}
+
+// Direct pixel editing on the active part canvas!
+function getTargetPart() {
+  const anim = getAnim(), f = getFrame();
+  if (anim.whole) return { cat: 'rope', name: f.whole, dx: 0, dy: 0 };
+  const name = f[editLayerKey];
+  if (!name || name === 'none') return null;
+  const [dx, dy] = getLayerOffset(f, editLayerKey);
+  return { cat: editLayerKey, name, dx, dy };
+}
+
+let isDrawing = false;
+const mainCv = document.getElementById('mainCv');
+function getGridXY(e) {
+  const r = mainCv.getBoundingClientRect();
+  let x = Math.floor(((e.clientX - r.left) / r.width) * 64);
+  const y = Math.floor(((e.clientY - r.top) / r.height) * 64);
+  if (document.getElementById('chkFlip').checked) x = 63 - x;
+  return [x, y];
+}
+
+function applyTool(e, isStart) {
+  const [gx, gy] = getGridXY(e);
+  if (gx < 0 || gx >= 64 || gy < 0 || gy >= 64) return;
+  if (curTool === 'picker') {
+    const comp = compositeFrame64(getAnim(), getFrame(), true, false);
+    const p = comp.getContext('2d').getImageData(gx, gy, 1, 1).data;
+    if (p[3] > 0) {
+      curColor = '#' + [p[0],p[1],p[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+      document.getElementById('colorPick').value = curColor;
+      setTool('pen');
+      toast('색 추출: ' + curColor);
+    }
+    return;
+  }
+  const tgt = getTargetPart();
+  if (!tgt) { toast('편집할 파츠가 선택되지 않았어요!'); return; }
+  const pc = PART_CANVASES[tgt.cat][tgt.name];
+  if (!pc) return;
+  const px = gx - tgt.dx, py = gy - tgt.dy;
+  if (px < 0 || px >= 64 || py < 0 || py >= 64) return;
+  const pg = pc.getContext('2d');
+  if (isStart) {
+    UNDO_STACK.push({ cat: tgt.cat, name: tgt.name, img: pg.getImageData(0, 0, 64, 64) });
+    if (UNDO_STACK.length > 40) UNDO_STACK.shift();
+  }
+  if (curTool === 'pen') {
+    pg.fillStyle = curColor;
+    pg.fillRect(px, py, 1, 1);
+  } else if (curTool === 'eraser') {
+    pg.clearRect(px, py, 1, 1);
+  }
+  render();
+}
+
+mainCv.addEventListener('pointerdown', e => {
+  if (playing) return;
+  isDrawing = true;
+  mainCv.setPointerCapture(e.pointerId);
+  applyTool(e, true);
+});
+mainCv.addEventListener('pointermove', e => { if (isDrawing) applyTool(e, false); });
+window.addEventListener('pointerup', () => { isDrawing = false; });
+
+function undo() {
+  if (!UNDO_STACK.length) return;
+  const u = UNDO_STACK.pop();
+  PART_CANVASES[u.cat][u.name].getContext('2d').putImageData(u.img, 0, 0);
+  render();
+  toast('실행 취소됨');
+}
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  else if (e.key.toLowerCase() === 'b') setTool('pen');
+  else if (e.key.toLowerCase() === 'e') setTool('eraser');
+  else if (e.key.toLowerCase() === 'i') setTool('picker');
+  else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+});
+
+function downloadBlob(url, filename) {
+  const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+}
+function downloadCurrentPart() {
+  const tgt = getTargetPart();
+  if (!tgt) return;
+  downloadBlob(PART_CANVASES[tgt.cat][tgt.name].toDataURL(), `${tgt.cat}_${tgt.name}.png`);
+  toast(`저장됨: ${tgt.cat}_${tgt.name}.png`);
+}
+function replaceCurrentPartPNG(input) {
+  const file = input.files[0]; if (!file) return;
+  const tgt = getTargetPart(); if (!tgt) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const im = new Image();
+    im.onload = () => {
+      const pc = PART_CANVASES[tgt.cat][tgt.name];
+      const pg = pc.getContext('2d');
+      UNDO_STACK.push({ cat: tgt.cat, name: tgt.name, img: pg.getImageData(0, 0, 64, 64) });
+      pg.clearRect(0, 0, 64, 64);
+      pg.drawImage(im, 0, 0, 64, 64);
+      render();
+      toast(`외부 PNG 반영 완료: ${tgt.cat}/${tgt.name}`);
+    };
+    im.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+function exportBakedSheet(includeWeapon) {
+  const anim = getAnim();
+  const c = document.createElement('canvas');
+  c.width = 64 * anim.frames.length; c.height = 64;
+  const g = c.getContext('2d');
+  anim.frames.forEach((fr, i) => {
+    g.drawImage(compositeFrame64(anim, fr, includeWeapon, false), i * 64, 0);
+  });
+  const suffix = includeWeapon ? '_with_weapon' : '';
+  downloadBlob(c.toDataURL(), `${curAnimKey}${suffix}.png`);
+  toast(`시트 굽기 완료: ${curAnimKey}${suffix}.png (${c.width}×64)`);
+}
+function exportPoseTable() {
+  const blob = new Blob([JSON.stringify(POSE_TABLE, null, 2)], { type: 'application/json' });
+  downloadBlob(URL.createObjectURL(blob), 'pose_table.json');
+  toast('pose_table.json 저장 완료!');
+}
+function importPoseTable(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    POSE_TABLE = JSON.parse(reader.result);
+    curAnimKey = Object.keys(POSE_TABLE.animations)[0];
+    curFrameIdx = 0;
+    renderAnimSelect(); renderLayerControls(); render();
+    toast('조립표 JSON 불러오기 완료!');
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+loadAllParts().then(() => {
+  initPalette();
+  renderAnimSelect();
+  renderLayerControls();
+  render();
+});
+</script>
+</body>
+</html>

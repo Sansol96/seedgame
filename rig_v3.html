@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>🌱 새싹 숲 — 스프라이트 리깅 + ㄱ/ㄴ 자동제거 스튜디오 (v3)</title>
+<style>
+  * { box-sizing: border-box; user-select: none; }
+  body { margin: 0; background: #1c1f26; color: #e8e6e3; font-family: 'Malgun Gothic', sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: #252933; padding: 7px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #394050; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 14px; color: #9be89b; margin-right: 4px; }
+  button, select { background: #343b4a; color: #eef; border: 1px solid #4d566b; border-radius: 5px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
+  button:hover { background: #434c60; }
+  button.primary { background: #3b7d58; border-color: #5ca87d; color: #fff; font-weight: bold; }
+  button.active { background: #e09132; border-color: #f7bc6c; color: #1a1a1a; font-weight: bold; }
+  main { flex: 1; display: flex; overflow: hidden; }
+  .left { width: 192px; background: #222630; border-right: 1px solid #353b4a; padding: 9px; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; }
+  .center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #171a20; padding: 8px; overflow: hidden; }
+  .right { width: 320px; background: #222630; border-left: 1px solid #353b4a; padding: 9px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .sec { font-size: 11px; color: #9bb; font-weight: bold; border-bottom: 1px solid #343b4a; padding-bottom: 3px; margin-bottom: 5px; }
+  .card { background: #2a2f3c; border: 1px solid #3d4558; border-radius: 6px; padding: 7px; display: flex; flex-direction: column; gap: 5px; }
+  .row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+  .row label { width: 68px; flex-shrink: 0; color: #cdd; }
+  .row input[type=range] { flex: 1; }
+  .row .v { width: 34px; text-align: right; color: #ffd479; font-family: monospace; }
+  .canvas-wrap { position: relative; border: 2px solid #4a5368; background: repeating-conic-gradient(#2d323e 0% 25%, #242832 0% 50%) 50% / 16px 16px; }
+  canvas { image-rendering: pixelated; display: block; }
+  .palette { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .sw { width: 26px; height: 26px; border-radius: 4px; border: 2px solid #111; cursor: pointer; }
+  .sw.sel { border-color: #fff; transform: scale(1.08); }
+  .part-row { display: flex; align-items: center; justify-content: space-between; font-size: 11px; background: #2a2f3c; padding: 4px 6px; border-radius: 4px; }
+  .timeline { height: 108px; background: #222630; border-top: 1px solid #353b4a; padding: 7px 12px; display: flex; align-items: center; gap: 8px; overflow-x: auto; }
+  .thumb { width: 68px; height: 82px; background: #2b303c; border: 2px solid #424a5c; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .thumb.cur { border-color: #7ee787; background: #303c35; }
+  .thumb span { font-size: 10px; color: #bbb; }
+  #toast { position: fixed; bottom: 118px; left: 50%; transform: translateX(-50%); background: rgba(18,22,28,0.94); color: #9ef59b; padding: 6px 14px; border-radius: 18px; border: 1px solid #5aa87b; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 99; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 스프라이트 리깅 + ㄱ/ㄴ 제거 스튜디오 (v3)</h1>
+  <select id="sideSel" onchange="setSide(this.value)">
+    <option value="front">↙ 앞모습</option>
+    <option value="back">↖ 뒷모습</option>
+  </select>
+  <button onclick="loadPreset('idle')">대기(2f)</button>
+  <button onclick="loadPreset('walk')">걷기(4f)</button>
+  <button onclick="loadPreset('slash1')">1타(4f)</button>
+  <button onclick="loadPreset('slash2')">2타(4f)</button>
+  <button id="btnPlay" class="primary" onclick="togglePlay()">▶ 재생</button>
+  <label style="font-size:12px;"><input type="checkbox" id="chkFlip" onchange="render()"> ↔ 좌우반전</label>
+  <label style="font-size:12px;"><input type="checkbox" id="chkPivots" checked onchange="render()"> 🔵 피벗 표시</label>
+  <div style="flex:1"></div>
+  <button class="primary" onclick="exportSheet(false)">🖼️ 시트 저장(빈손)</button>
+  <button onclick="exportSheet(true)">⚔️ 시트 저장(검포함)</button>
+</header>
+
+<main>
+  <div class="left">
+    <div>
+      <div class="sec">1. 기본형 풀버전 파츠 (64×64)</div>
+      <div style="font-size:10px;color:#9ab;margin-bottom:5px;">오빠가 그린 PNG로 1클릭 교체! (외곽선 자동 벗기기 지원)</div>
+      <label style="font-size:11px;display:block;margin-bottom:5px;"><input type="checkbox" id="chkAutoStrip" checked> 불러올 때 #482d26 외곽선 자동 벗기기</label>
+      <div id="partList" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <input type="file" id="partFileIn" accept=".png" style="display:none" onchange="onPartFileChosen(this)">
+    </div>
+
+    <div>
+      <div class="sec">2. 후처리 도트 수정 (프레임별)</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;">
+        <button id="m_view" class="active" onclick="setMode('view')">👀 보기</button>
+        <button id="m_pen" onclick="setMode('pen')">✏️ 연필</button>
+        <button id="m_era" onclick="setMode('eraser')">🧹 지우개</button>
+        <button id="m_pick" onclick="setMode('picker')">💉 스포</button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <button onclick="undoPost()" style="flex:1;">↩ 취소</button>
+        <button onclick="clearPost()" style="flex:1;">🗑 후처리 리셋</button>
+      </div>
+      <div class="palette" id="palette"></div>
+    </div>
+
+    <div class="card" style="align-items:center;">
+      <div style="font-size:11px;color:#9ab;">실시간 2배율 프리뷰</div>
+      <canvas id="miniCv" width="128" height="128"></canvas>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="canvas-wrap">
+      <canvas id="mainCv" width="512" height="512"></canvas>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:#9ab;">
+      💡 오빠가 그린 <b>실제 PNG 파츠</b>를 RotSprite 회전 ➔ 소매 중력 처짐 ➔ 통합 외곽선 ➔ <b>ㄱ/ㄴ 더블픽셀 자동 제거</b> ➔ 최종 도트 후처리까지 한 번에!
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <div class="sec" style="margin:0;">✨ 픽셀 연산 엔진 설정</div>
+      <div class="row">
+        <label style="width:95px;">ㄱ/ㄴ 뭉침 제거</label>
+        <select id="dedoubleMode" style="flex:1;" onchange="render()">
+          <option value="0">0. 끔 (8방향 두꺼운 외곽선 비교용)</option>
+          <option value="1">1. 기본 (4방향 1px + ㄱ/ㄴ 컷)</option>
+          <option value="2" selected>2. 강함 (돌출 스무딩 + ㄱ/ㄴ 컷)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label style="width:95px;">소매 중력 처짐</label>
+        <input type="range" id="s_sag" min="0" max="2" step="0.25" value="1.0" oninput="document.getElementById('v_sag').textContent=this.value;render()">
+        <span class="v" id="v_sag">1.0</span>
+      </div>
+      <div class="row">
+        <label style="width:165px;"><input type="checkbox" id="chkRotSprite" checked onchange="render()"> RotSprite 3× 회전 (깨짐 방지)</label>
+      </div>
+      <div class="row">
+        <label style="width:185px;"><input type="checkbox" id="chkArmCrease" checked onchange="render()"> 팔이 몸 앞 지날 때 경계선 넣기</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec" style="margin:0;">몸통 & 머리</div>
+      <div class="row"><label>몸통 X</label><input type="range" id="s_bx" min="-5" max="5" value="0" oninput="setF('bx',+this.value)"><span class="v" id="v_bx">0</span></div>
+      <div class="row"><label>몸통 Y</label><input type="range" id="s_by" min="-4" max="4" value="0" oninput="setF('by',+this.value)"><span class="v" id="v_by">0</span></div>
+      <div class="row"><label>머리 Y</label><input type="range" id="s_hy" min="-2" max="2" value="0" oninput="setF('hy',+this.value)"><span class="v" id="v_hy">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sec" style="margin:0;">오른팔 (검팔 · rArm)</div>
+      <div class="row"><label>회전 각도</label><input type="range" id="s_ra" min="-180" max="180" step="5" value="0" oninput="setF('ra',+this.value)"><span class="v" id="v_ra">0</span></div>
+      <div class="row"><label>X / Y 이동</label>
+        <input type="range" id="s_rx" min="-4" max="4" value="0" oninput="setF('rx',+this.value)" style="width:60px;">
+        <input type="range" id="s_ry" min="-4" max="4" value="0" oninput="setF('ry',+this.value)" style="width:60px;">
+        <span class="v" id="v_rxy">0,0</span>
+      </div>
+      <div class="row">
+        <label style="width:auto;"><input type="checkbox" id="c_rBehind" onchange="setF('rBehind',this.checked)"> 몸 뒤로</label>
+        <label style="width:auto;"><input type="checkbox" id="c_rOverHead" onchange="setF('rOverHead',this.checked)"> 머리 앞으로</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec" style="margin:0;">왼팔 (보조팔 · lArm)</div>
+      <div class="row"><label>회전 각도</label><input type="range" id="s_la" min="-180" max="180" step="5" value="0" oninput="setF('la',+this.value)"><span class="v" id="v_la">0</span></div>
+      <div class="row"><label>X / Y 이동</label>
+        <input type="range" id="s_lx" min="-4" max="4" value="0" oninput="setF('lx',+this.value)" style="width:60px;">
+        <input type="range" id="s_ly" min="-4" max="4" value="0" oninput="setF('ly',+this.value)" style="width:60px;">
+        <span class="v" id="v_lxy">0,0</span>
+      </div>
+      <div class="row">
+        <label style="width:auto;"><input type="checkbox" id="c_lBehind" onchange="setF('lBehind',this.checked)"> 몸 뒤로</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec" style="margin:0;">다리 (통짜 1관절 회전 + 미세이동)</div>
+      <div class="row"><label>오른다리</label><input type="range" id="s_rla" min="-45" max="45" step="5" value="0" oninput="setF('rla',+this.value)"><span class="v" id="v_rla">0</span></div>
+      <div class="row"><label>왼다리</label><input type="range" id="s_lla" min="-45" max="45" step="5" value="0" oninput="setF('lla',+this.value)"><span class="v" id="v_lla">0</span></div>
+      <div class="row"><label>발 Y 보정</label>
+        <span style="font-size:10px;">오른</span><input type="range" id="s_rly" min="-3" max="2" value="0" oninput="setF('rly',+this.value)" style="width:50px;">
+        <span style="font-size:10px;">왼</span><input type="range" id="s_lly" min="-3" max="2" value="0" oninput="setF('lly',+this.value)" style="width:50px;">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec" style="margin:0;">⚔️ 검 (옵션)</div>
+      <div class="row">
+        <label style="width:auto;"><input type="checkbox" id="c_sword" onchange="setF('sword',this.checked)"> 검 표시</label>
+        <label style="width:auto;"><input type="checkbox" id="c_sBehind" onchange="setF('sBehind',this.checked)"> 몸 뒤로</label>
+      </div>
+      <div class="row"><label>검 각도</label><input type="range" id="s_sa" min="-180" max="180" step="5" value="120" oninput="setF('sa',+this.value)"><span class="v" id="v_sa">120</span></div>
+    </div>
+  </div>
+</main>
+
+<div class="timeline" id="timeline"></div>
+<div id="toast"></div>
+
+<script>
+const EMBEDDED = {"front": {"head": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACBklEQVR4nO3YwSsEURwH8N9u4ybtQSJlbSEpjopSotYotblw2NPGH8DBBTkoSnuTG+WoXKSU5aAtRblJSShWieQguTmsfs++6Rkz2m16Y5bvp6Y3+3Zmd3/ffe/NzhIBAAAAAAAAAPwzIT/fzGxvyRdzXObs0rfPZfhZeLK/g2KNtd+ev7l9tHfl/QrC8KN4Lpw5Fe/Un+y3dvO6QzD8KN6tcDfy+EIQWkMwgla8is/VHUKYNOptbvL8Gl4C/LUATGXeuyxyJeluayj6ChKYERBrrKXc+xtFKyrFY9mWQp7T19VKuoR1vTB/67xlr66tPnsY/LyXgIIdwMOL2CQeDbxx0dyq/WqrThm1b3YsrmUahEmjWF1EtBzEwfGFtc/4sQjJ4/oQyMtg5vOSJb6t6YU50bc4M2+FIFs1EG45MLnqr2+fUCrRSWUZgFm4CsjihobHaWdr7csxah+HYxetqRKjoywvg3a7h/uiYLc+HiVypDAObiI1SglzwFpMy/pmaLAnXlSf3XZmj7Knd5+jQVlQyyaA3NNrSceLdaAw5CeXVkXLxetkkA/s89+tzx6cWvzR+Z2W2+MQacILYX11hO6fX34sVuKF0KlwncUzrffaHAL/jucCfgphY2XZmusqPo/pvB0OkWZOv94201PW/shUOhB/jQEAAAAAAAAAAAAAAADQ3/YBOq/jNpYlQ6sAAAAASUVORK5CYII=", "torso": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAwklEQVR4nO3WKw4CMRCA4ekEhUDgMFyCoDEIJJdA7AVQK7FoQjgABoHkEnCATTAY3AousKQkTVagO037f6oPMZ2mk6kIAAAAAAAAAAAAAAAAgJw5i6Cf26kL49FqY3KGYBArUH289pJeu/uu6mb1wfn1Z9P81s/7bfTLUDHgkw7J+3n7fokVtQrcfxGWVAqnkoD5YmlWBiqFUymcxgrkW11od//2sv8HpJBs0iUwnkzzfgHDx0VSpNYHAAAAAAAAEtsX9dkuVVVcjcUAAAAASUVORK5CYII=", "rArm": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAcUlEQVR4nO3SwQkCQRAEwN7lAjAE/0ZgBheHgfq+MBR8+DQBWRHMQJSFqYL5DkxPJwAAAAAAAAAAAPCV8biMTKpXD6FXPfzvDWi7fUu1AMbn+7f7NanegFn1FLf8cvm2nVO6Acf11A555j0AAAAAZA4vnA0XrJlIuocAAAAASUVORK5CYII=", "lArm": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAkUlEQVR4nO3UMQoCMRAF0NngASwtBL23F7ES7PYIlooWluIFIhZa7AGSYfc9CCRVhpmfRAAAAAAAAAAAAMzYEEnU17X+9sN636yuEsk8nrem95VINv3tZhf3y/l/XkQDeiqRwPTNt0xBiSRafnwpGzDVKgUlEumRghILt4pkxvHUu4T+3sdD/a7edQAAAAAxSx9Fyh9n6FbHAQAAAABJRU5ErkJggg==", "rLeg": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAs0lEQVR4nO3WsQkCMRQG4ESsrFxAsBDcwF5wBwewdAeLq9xBHMANLAR7dxC0tVKxs1C4QtTCMhe874MUqX5eyMtLCAAAAAAAAAAAAAAAwL+JqYImw8Hjfb/c7pJl/9KoIjSX4is7ADISU4Zd14vyHbjs96EzncfatUCr1y/X8X4LuYgpwx7nw2sSxHY3ixsQUwUV49HHGJytNvVpgeKr+Jw0qgg9nq4hF80qCs/pIwQQ6uwJCMsicbOfpIAAAAAASUVORK5CYII=", "lLeg": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAsUlEQVR4nO3VPWqCQRAA0PlWD2CRxkJByBksAwHv4AEsvYC1lRewzFkCKT2DEEIKwUqshdh9RUi9s8T3ym3mZ2d3IgAAAAAAAAAAAAAAgP+mywy+ep3//D57ez9UzanEgyuZwWvf9l9KdgIk66IB3/tN/xlO1rvu4RpwO370DRg+v9gCNQ2jAYOnaVrsLhqwXS76J/B1vlZdjyUaKj5DyS5+Nh5lphDpE/B5ukTW+ENwByqWIY+fx6zVAAAAAElFTkSuQmCC"}, "back": {"head": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABh0lEQVR4nO3XsUrDQBjA8Utotw6OdbENqIigu06iIH0HR1/Dd3HyAdxcdFRwrCDiEiuIDg4d3BwiF3L1DNe0NPkuDf5/S9LL5Zrvu9xdTikAAAAAAAD8L4GvPxrsbCaz6lw9PHt7HqPlK/CTo10V9buT8vjlIz2asux34jsRge/AbTd3T+kxWl2Z1Dm/vFdvn2NvSQikgi8KPJ+Ew72tP2X6bbi4HnpJQlBn8EV8JSGUaPRgY710G2UTWEsCBlnv25PconrtTjp/zLN6LNUqEPW7avT9tXAP6sC13zaGqpHLYK/dSYMw54Ypc9Uvut64BIysQOYJalqdbEglUpNhqISUnQN8TYatqhvMf+Etu7DKxvRrqtfuJgklGnV989c9lLx9B5ydHpd6cPs+fR6/j5WkUC0h6V4XnwRjq9f0uR4Srk2P8/7cvbePr6L7gaDqBvUw2N9ec14z2167h+35wmyPDengRbfD5nxaMorowLVGbofzXJsZO7BZ1wEAAAAAAAAAAABViR+MIava+To56QAAAABJRU5ErkJggg==", "torso": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAuklEQVR4nO3WoQpCMRTG8bPDzQabxSLcN9AqgsH3EF/B5Cv4ACJmq9Fm9xEuWCw2gy9wZcLEovFseP4/GNvSt40dNhEAAAAAAAAAAAAAAAAA+GMhR+jjuG3TuDNbZFlDEqyCVptDe2kaGdS1xD5J8/16meUgKsuw++362nBspVBxTsU5tQqKdT4cT7+WRi4qzqk4p+JcZRn2+f6XQqUA3V4/W3awCJlPRu+v7y+70zm4vAEAAAAAAIipJ8OOIYtY9v8AAAAAAElFTkSuQmCC", "rArm": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAi0lEQVR4nO3UMQrCQBQE0J8ltVhaBAzYCB7Cmwt2OYKl4AW8gEQICMHe3cV9r/lsOcOwEQAAAAAAAAAAAPBz8/M+RwEpKgj+Cf+4XbOX0Ecluu3YlVhBigqCr9+5V5CiAt8lNFfA2rDbZ11BisalaFwfFZmmy3KH8dBmAad4LXdzPBf7FAEAAID4e2+5Oh72XeB8xAAAAABJRU5ErkJggg==", "lArm": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAkklEQVR4nO3TsQ3CMBAFUAcxAAsgUbIFg7IIFXXGIFKKlIgFDqVBER2FHQe/J7n1+c7/UgIAAAAAAAAAAOB/dbkLxPMRn2KHU/Z6v9qVLLYcRhMDiAobXjUBXUsrEIvfH6ehyuaLJ6CZAcQGdr9YAsZpSMfzpcr4z5pfgX3KoO/vOa7dltftGvNZ+x0AAABA+vYGZ2giZ+X4/BYAAAAASUVORK5CYII=", "rLeg": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAnElEQVR4nO3WsQkCQRAF0N3zSjDVyBoMBcEeLMDQBowMjGzA8AqwB0EwtAYz2xAUkws0dxb3vXCTPzOww6QEAAAAAAAAAAAAAADwZ3JU8Go+fX6+defrz+tpUpB3sxENFzMACpEjw++HTb8HRut9rm4Aj9ulH0A7mYXU0qTKtZHhg+E4RcsRobvl4usG2B5PvkDVl2BXwFEEpOq8AIXKGJXYDUvxAAAAAElFTkSuQmCC", "lLeg": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAsUlEQVR4nO3XMWpCQRAG4Nn11alCOrXxDJaBgHfwACm9QCoLq1zA0gN4ByGQMmdI5zUEJc0Dk8bmrUv2+8pp/mFYhtkIAAAAAAAAAAAAAACAfyYNHfD6Mj//ru0+vgbPvVWOxuVoXL53A9xZKhFy3L71i3C8eq9mAf4o0szp+7MfQDd7rmoAORrXlQgZPU6iVmnoI2j69HBVW+8PqYkXsFku/lyANcrRuFT6L1DTP4AgLqaHFmnvK4DNAAAAAElFTkSuQmCC"}, "weapon": {"sword": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAqUlEQVR4nGNgGAWjYBTgBB66av9xy1LB8P+fd/ynhiUsMANB9I7LtxixWcZAJMCmH2zB2lUxYE5w2BK4Yd+enGJYf3QfSa4NtHb6j24Z2AIuGTOwgdIiAmDJp28+gOnW5WdIssAkp4uhOtIEbhnIErAFIMORDYaBu7duEW34+11zIAZPweKD4LAlKIKgcH959ybD+12nGSgJf7gFuCQJyQ3efDAKRsHgAgDWlUyncv1ilAAAAABJRU5ErkJggg=="}};
+const OUT_RGB = [72, 45, 38];
+const SLEEVE_SHADE = [227, 216, 193];
+const PALETTE = [
+  '#482d26', '#c4906c', '#a37054', '#825744', '#e39578',
+  '#fcdcc2', '#f2b89b', '#cd8469', '#fff0e0', '#e3d8c1',
+  '#c7b89e', '#7c99b0', '#59738a', '#475a6c', '#634136',
+  '#fff7eb', '#d8dee9', '#88a0b8', '#f0c040', '#ffffff'
+];
+
+// Exact joint pivots in 64x64 space for front & back!
+const PIVOTS = {
+  front: {
+    head: [31, 35], torso: [30, 42],
+    rArm: [25, 39], lArm: [34, 39],
+    rLeg: [28, 49], lLeg: [34, 49],
+    handOffset: [-2, 6], // relative to rArm pivot at 0deg
+  },
+  back: {
+    head: [30, 36], torso: [30, 43],
+    rArm: [33, 40], lArm: [26, 40],
+    rLeg: [32, 50], lLeg: [26, 50],
+    handOffset: [2, 6],
+  },
+};
+
+const PARTS = { front: {}, back: {}, weapon: {} };
+let side = 'front';
+let frames = [];
+let curIdx = 0;
+let curMode = 'view'; // view | pen | eraser | picker
+let curColor = '#482d26';
+let playing = false, playTimer = null;
+let pendingReplacePart = null;
+const UNDO_POST = [];
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.opacity = 1;
+  clearTimeout(t._tm); t._tm = setTimeout(() => t.style.opacity = 0, 1800);
+}
+
+function defaultFrame() {
+  return { bx:0, by:0, hy:0, ra:0, rx:0, ry:0, rBehind:false, rOverHead:false, la:0, lx:0, ly:0, lBehind:false, rla:0, lla:0, rly:0, lly:0, sword:false, sa:120, sBehind:false, post:{} };
+}
+
+function loadImageData(url, w = 64, h = 64) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+      g.drawImage(im, 0, 0);
+      res(g.getImageData(0, 0, w, h));
+    };
+    im.src = url;
+  });
+}
+
+async function initParts() {
+  for (const s of ['front', 'back']) {
+    for (const k of ['head', 'torso', 'rArm', 'lArm', 'rLeg', 'lLeg']) {
+      PARTS[s][k] = await loadImageData(EMBEDDED[s][k], 64, 64);
+    }
+  }
+  PARTS.weapon.sword = await loadImageData(EMBEDDED.weapon.sword, 24, 24);
+}
+
+function isSleeveColor(r, g, b) {
+  return (r >= 190 && g >= 175 && b >= 145) && !(r === 252 && g === 220 && b === 194);
+}
+
+// RotSprite-style 3x oversampled rotation (super crisp 1px diagonals, zero noisy gaps!)
+function rotatePart64(imgData, pivX, pivY, deg, dx, dy, useRotSprite = true) {
+  const out = new Uint8ClampedArray(64 * 64 * 4);
+  const src = imgData.data;
+  const rad = deg * Math.PI / 180; // +deg = clockwise in screen coords (down +Y -> screen-left -X!)
+  const cosA = Math.cos(rad), sinA = Math.sin(rad);
+
+  if (Math.abs(deg) < 0.01) {
+    for (let y = 0; y < 64; y++) {
+      for (let x = 0; x < 64; x++) {
+        const sx = Math.round(x - dx), sy = Math.round(y - dy);
+        if (sx < 0 || sx >= 64 || sy < 0 || sy >= 64) continue;
+        const si = (sy * 64 + sx) * 4;
+        if (src[si + 3] > 128) {
+          const di = (y * 64 + x) * 4;
+          out[di]=src[si]; out[di+1]=src[si+1]; out[di+2]=src[si+2]; out[di+3]=255;
+        }
+      }
+    }
+    return out;
+  }
+
+  if (!useRotSprite) {
+    for (let y = 0; y < 64; y++) {
+      for (let x = 0; x < 64; x++) {
+        const tx = x - dx - pivX, ty = y - dy - pivY;
+        const sx = Math.round(tx * cosA + ty * sinA + pivX);
+        const sy = Math.round(-tx * sinA + ty * cosA + pivY);
+        if (sx < 0 || sx >= 64 || sy < 0 || sy >= 64) continue;
+        const si = (sy * 64 + sx) * 4;
+        if (src[si + 3] > 128) {
+          const di = (y * 64 + x) * 4;
+          out[di]=src[si]; out[di+1]=src[si+1]; out[di+2]=src[si+2]; out[di+3]=255;
+        }
+      }
+    }
+    return out;
+  }
+
+  // 3x3 subpixel majority vote (RotSprite core): prevents thin-limb breaks & stair-step holes!
+  for (let y = 0; y < 64; y++) {
+    for (let x = 0; x < 64; x++) {
+      let hits = 0;
+      const votes = new Map();
+      let bestKey = 0, bestCnt = 0, bestRGB = null;
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let ox = -1; ox <= 1; ox++) {
+          const tx = (x + ox * 0.33) - dx - pivX;
+          const ty = (y + oy * 0.33) - dy - pivY;
+          const sx = Math.round(tx * cosA + ty * sinA + pivX);
+          const sy = Math.round(-tx * sinA + ty * cosA + pivY);
+          if (sx < 0 || sx >= 64 || sy < 0 || sy >= 64) continue;
+          const si = (sy * 64 + sx) * 4;
+          if (src[si + 3] > 128) {
+            hits++;
+            const key = (src[si] << 16) | (src[si+1] << 8) | src[si+2];
+            const c = (votes.get(key) || 0) + 1;
+            votes.set(key, c);
+            if (c > bestCnt) { bestCnt = c; bestKey = key; bestRGB = [src[si], src[si+1], src[si+2]]; }
+          }
+        }
+      }
+      if (hits >= 5 && bestRGB) {
+        const di = (y * 64 + x) * 4;
+        out[di]=bestRGB[0]; out[di+1]=bestRGB[1]; out[di+2]=bestRGB[2]; out[di+3]=255;
+      }
+    }
+  }
+  return out;
+}
+
+// Gravity sleeve drape on actual rotated sleeve pixels (leaves skin hand untouched!)
+function applySleeveGravity(armBuf, deg, sagStrength) {
+  const horiz = Math.abs(Math.sin(deg * Math.PI / 180));
+  const extraY = Math.round(horiz * sagStrength * 1.4);
+  if (extraY <= 0) return armBuf;
+  const out = new Uint8ClampedArray(armBuf);
+  for (let x = 1; x < 63; x++) {
+    // find bottom-most sleeve pixel in this column
+    let botY = -1;
+    for (let y = 62; y >= 1; y--) {
+      const i = (y * 64 + x) * 4;
+      if (armBuf[i + 3] > 128) {
+        if (isSleeveColor(armBuf[i], armBuf[i+1], armBuf[i+2])) botY = y;
+        break;
+      }
+    }
+    if (botY >= 0 && botY + extraY < 63) {
+      // Require sleeve pixel to have at least 1 neighbor sleeve pixel (so tip doesn't get spiky)
+      const hasSide = (armBuf[(botY*64 + x-1)*4 + 3] > 128) || (armBuf[(botY*64 + x+1)*4 + 3] > 128);
+      if (!hasSide) continue;
+      for (let d = 1; d <= extraY; d++) {
+        const di = ((botY + d) * 64 + x) * 4;
+        if (out[di + 3] === 0) {
+          out[di] = SLEEVE_SHADE[0]; out[di+1] = SLEEVE_SHADE[1]; out[di+2] = SLEEVE_SHADE[2]; out[di+3] = 255;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// Shave 1px isolated spikes on rotated silhouette (strong de-jagging mode)
+function smoothSilhouetteSpikes(buf) {
+  const out = new Uint8ClampedArray(buf);
+  for (let y = 1; y < 63; y++) {
+    for (let x = 1; x < 63; x++) {
+      const i = (y * 64 + x) * 4;
+      if (buf[i + 3] <= 128) continue;
+      const n = buf[((y-1)*64+x)*4+3] > 128 ? 1 : 0;
+      const s = buf[((y+1)*64+x)*4+3] > 128 ? 1 : 0;
+      const w = buf[(y*64+x-1)*4+3] > 128 ? 1 : 0;
+      const e = buf[(y*64+x+1)*4+3] > 128 ? 1 : 0;
+      if (n + s + w + e <= 1) {
+        out[i+3] = 0; // isolated 1px spike removed!
+      }
+    }
+  }
+  return out;
+}
+
+function compositeBuf(dst, src, addCrease = false) {
+  if (addCrease) {
+    // Draw subtle 1px separator ONLY where src overlaps an existing different-part pixel on its bottom/inner edge
+    for (let y = 1; y < 63; y++) {
+      for (let x = 1; x < 63; x++) {
+        const i = (y * 64 + x) * 4;
+        if (src[i + 3] > 128) continue;
+        if (dst[i + 3] <= 128) continue;
+        // Only crease where src borders from above or side onto vest/body
+        const up = src[((y-1)*64+x)*4+3] > 128;
+        const dn = src[((y+1)*64+x)*4+3] > 128;
+        const lf = src[(y*64+x-1)*4+3] > 128;
+        const rt = src[(y*64+x+1)*4+3] > 128;
+        if (up || dn || lf || rt) {
+          // check if dst pixel is vest blue (124,153,176 / 89,115,138 / 71,90,108)
+          const r = dst[i], g = dst[i+1], b = dst[i+2];
+          if (b > r + 15) {
+            dst[i] = OUT_RGB[0]; dst[i+1] = OUT_RGB[1]; dst[i+2] = OUT_RGB[2]; dst[i+3] = 255;
+          }
+        }
+      }
+    }
+  }
+  for (let i = 0; i < src.length; i += 4) {
+    if (src[i + 3] > 128) {
+      dst[i] = src[i]; dst[i+1] = src[i+1]; dst[i+2] = src[i+2]; dst[i+3] = 255;
+    }
+  }
+}
+
+// Unified pixel-perfect outline + De-Double (ㄱ/ㄴ corner cluster removal!)
+function applyUnifiedOutline(bodyBuf, dedoubleMode) {
+  const out = new Uint8ClampedArray(bodyBuf);
+  const isOutMask = new Uint8Array(64 * 64);
+  const isFill = (x, y) => (x >= 0 && x < 64 && y >= 0 && y < 64) && bodyBuf[(y * 64 + x) * 4 + 3] > 128;
+
+  if (dedoubleMode === 0) {
+    // Mode 0: 8-connected outline (classic thick ㄱ/ㄴ corners so user can compare!)
+    for (let y = 1; y < 63; y++) {
+      for (let x = 1; x < 63; x++) {
+        if (isFill(x, y)) continue;
+        let hit = false;
+        for (let dy = -1; dy <= 1 && !hit; dy++)
+          for (let dx = -1; dx <= 1 && !hit; dx++)
+            if ((dx || dy) && isFill(x + dx, y + dy)) hit = true;
+        if (hit) isOutMask[y * 64 + x] = 1;
+      }
+    }
+  } else {
+    // Mode 1 & 2: Crisp 4-connected outline (ZERO outer ㄱ/ㄴ corner blocks!)
+    for (let y = 1; y < 63; y++) {
+      for (let x = 1; x < 63; x++) {
+        if (isFill(x, y)) continue;
+        if (isFill(x-1,y) || isFill(x+1,y) || isFill(x,y-1) || isFill(x,y+1)) {
+          isOutMask[y * 64 + x] = 1;
+        }
+      }
+    }
+    // Explicit De-Double pass: shave any 2x2 L-corner (ㄱ/ㄴ) where 3 outline pixels cluster
+    // and removing the corner keeps every body pixel protected without thick 2px steps!
+    for (let pass = 0; pass < 2; pass++) {
+      const toRemove = [];
+      for (let y = 1; y < 63; y++) {
+        for (let x = 1; x < 63; x++) {
+          if (!isOutMask[y * 64 + x]) continue;
+          const n = isOutMask[(y-1)*64+x], s = isOutMask[(y+1)*64+x];
+          const w = isOutMask[y*64+x-1], e = isOutMask[y*64+x+1];
+          // Check if (x,y) is the corner of a ㄱ/ㄴ (two orthogonal outline neighbors)
+          const pairs = [
+            [n, e, !isFill(x-1, y) && !isFill(x, y+1) && isFill(x+1, y-1)],
+            [n, w, !isFill(x+1, y) && !isFill(x, y+1) && isFill(x-1, y-1)],
+            [s, e, !isFill(x-1, y) && !isFill(x, y-1) && isFill(x+1, y+1)],
+            [s, w, !isFill(x+1, y) && !isFill(x, y-1) && isFill(x-1, y+1)],
+          ];
+          for (const [a, b, safe] of pairs) {
+            if (a && b && safe) {
+              // Only remove if no orthogonal fill pixel would become completely unbordered
+              const fn = isFill(x, y-1), fs = isFill(x, y+1), fw = isFill(x-1, y), fe = isFill(x+1, y);
+              if (dedoubleMode === 2 || (!fn && !fs && !fw && !fe)) {
+                toRemove.push(y * 64 + x);
+                break;
+              }
+            }
+          }
+        }
+      }
+      for (const idx of toRemove) isOutMask[idx] = 0;
+    }
+  }
+
+  for (let i = 0; i < 64 * 64; i++) {
+    if (isOutMask[i]) {
+      const p = i * 4;
+      out[p] = OUT_RGB[0]; out[p+1] = OUT_RGB[1]; out[p+2] = OUT_RGB[2]; out[p+3] = 255;
+    }
+  }
+  return out;
+}
+
+function blitSword(buf, hx, hy, deg) {
+  const sw = PARTS.weapon.sword.data;
+  const rad = deg * Math.PI / 180;
+  const cosA = Math.cos(rad), sinA = Math.sin(rad);
+  for (let y = 0; y < 64; y++) {
+    for (let x = 0; x < 64; x++) {
+      const dx = x - hx, dy = y - hy;
+      const sx = Math.round(dx * cosA + dy * sinA + 5);
+      const sy = Math.round(-dx * sinA + dy * cosA + 12);
+      if (sx < 0 || sx >= 24 || sy < 0 || sy >= 24) continue;
+      const si = (sy * 24 + sx) * 4;
+      if (sw[si + 3] > 128) {
+        const di = (y * 64 + x) * 4;
+        buf[di]=sw[si]; buf[di+1]=sw[si+1]; buf[di+2]=sw[si+2]; buf[di+3]=255;
+      }
+    }
+  }
+}
+
+function renderRigFrame64(s, f, includeSword = true) {
+  const P = PARTS[s];
+  const pv = PIVOTS[s];
+  const useRot = document.getElementById('chkRotSprite').checked;
+  const dedouble = +document.getElementById('dedoubleMode').value;
+  const sag = +document.getElementById('s_sag').value;
+  const crease = document.getElementById('chkArmCrease').checked;
+
+  let rArmB = rotatePart64(P.rArm, pv.rArm[0], pv.rArm[1], f.ra, f.bx + f.rx, f.by + f.ry, useRot);
+  let lArmB = rotatePart64(P.lArm, pv.lArm[0], pv.lArm[1], f.la, f.bx + f.lx, f.by + f.ly, useRot);
+  rArmB = applySleeveGravity(rArmB, f.ra, sag);
+  lArmB = applySleeveGravity(lArmB, f.la, sag);
+  let rLegB = rotatePart64(P.rLeg, pv.rLeg[0], pv.rLeg[1], f.rla, f.bx, f.by + f.rly, useRot);
+  let lLegB = rotatePart64(P.lLeg, pv.lLeg[0], pv.lLeg[1], f.lla, f.bx, f.by + f.lly, useRot);
+  let torsoB = rotatePart64(P.torso, pv.torso[0], pv.torso[1], 0, f.bx, f.by, false);
+  let headB  = rotatePart64(P.head, pv.head[0], pv.head[1], 0, f.bx, f.by + f.hy, false);
+
+  if (dedouble === 2) {
+    rArmB = smoothSilhouetteSpikes(rArmB);
+    lArmB = smoothSilhouetteSpikes(lArmB);
+    rLegB = smoothSilhouetteSpikes(rLegB);
+    lLegB = smoothSilhouetteSpikes(lLegB);
+  }
+
+  // Compute hand position for sword attachment (matches clockwise +deg rotation!)
+  const rad = f.ra * Math.PI / 180;
+  const hx = Math.round(pv.rArm[0] + f.bx + f.rx + pv.handOffset[0]*Math.cos(rad) - pv.handOffset[1]*Math.sin(rad));
+  const hy = Math.round(pv.rArm[1] + f.by + f.ry + pv.handOffset[0]*Math.sin(rad) + pv.handOffset[1]*Math.cos(rad));
+
+  // Build unified body interior first (so limbs & torso share ONE seamless outer outline!)
+  let body = new Uint8ClampedArray(64 * 64 * 4);
+  if (f.rBehind) compositeBuf(body, rArmB, false);
+  if (f.lBehind) compositeBuf(body, lArmB, false);
+  compositeBuf(body, rLegB, false);
+  compositeBuf(body, lLegB, false);
+  compositeBuf(body, torsoB, false);
+  if (!f.lBehind) compositeBuf(body, lArmB, crease && Math.abs(f.la) >= 15);
+  if (!f.rBehind && !f.rOverHead) compositeBuf(body, rArmB, crease && Math.abs(f.ra) >= 15);
+
+  // Unified outline + De-Double pass!
+  let finalBuf = applyUnifiedOutline(body, dedouble);
+
+  // Sword behind body
+  if (includeSword && f.sword && f.sBehind) {
+    const swLayer = new Uint8ClampedArray(64 * 64 * 4);
+    blitSword(swLayer, hx, hy, f.sa);
+    for (let i = 0; i < finalBuf.length; i += 4) {
+      if (finalBuf[i + 3] === 0 && swLayer[i + 3] > 128) {
+        finalBuf[i]=swLayer[i]; finalBuf[i+1]=swLayer[i+1]; finalBuf[i+2]=swLayer[i+2]; finalBuf[i+3]=255;
+      }
+    }
+  }
+
+  // Head on top (keeps its crisp hand-drawn hair/eye outlines!)
+  compositeBuf(finalBuf, headB, false);
+
+  // Optional arm over head (e.g. high sword windup)
+  if (!f.rBehind && f.rOverHead) {
+    const armOnly = applyUnifiedOutline(rArmB, dedouble);
+    compositeBuf(finalBuf, armOnly, false);
+  }
+
+  // Sword in front of body
+  if (includeSword && f.sword && !f.sBehind) {
+    blitSword(finalBuf, hx, hy, f.sa);
+  }
+
+  // Apply per-frame manual post-process dot edits on top!
+  if (f.post) {
+    for (const [k, hex] of Object.entries(f.post)) {
+      const [px, py] = k.split(',').map(Number);
+      const di = (py * 64 + px) * 4;
+      if (hex === null) {
+        finalBuf[di+3] = 0;
+      } else {
+        finalBuf[di]   = parseInt(hex.slice(1,3), 16);
+        finalBuf[di+1] = parseInt(hex.slice(3,5), 16);
+        finalBuf[di+2] = parseInt(hex.slice(5,7), 16);
+        finalBuf[di+3] = 255;
+      }
+    }
+  }
+
+  return new ImageData(finalBuf, 64, 64);
+}
+
+function render() {
+  const f = frames[curIdx];
+  const img = renderRigFrame64(side, f, true);
+  const flipX = document.getElementById('chkFlip').checked;
+
+  const off = document.createElement('canvas'); off.width = 64; off.height = 64;
+  off.getContext('2d').putImageData(img, 0, 0);
+
+  const mc = document.getElementById('mainCv');
+  const mg = mc.getContext('2d');
+  mg.imageSmoothingEnabled = false;
+  mg.clearRect(0, 0, 512, 512);
+  mg.save();
+  if (flipX) { mg.translate(512, 0); mg.scale(-1, 1); }
+  mg.drawImage(off, 0, 0, 512, 512);
+  if (document.getElementById('chkPivots').checked && curMode === 'view') {
+    const pv = PIVOTS[side];
+    const drawDot = (pt, col) => {
+      mg.beginPath(); mg.arc((pt[0]+f.bx+0.5)*8, (pt[1]+f.by+0.5)*8, 5, 0, Math.PI*2);
+      mg.fillStyle = col; mg.fill(); mg.strokeStyle = '#111'; mg.lineWidth = 2; mg.stroke();
+    };
+    drawDot(pv.rArm, '#44ff77'); drawDot(pv.lArm, '#55aaff');
+    drawDot(pv.rLeg, '#ff66aa'); drawDot(pv.lLeg, '#33e6c5');
+  }
+  mg.restore();
+
+  const mini = document.getElementById('miniCv').getContext('2d');
+  mini.imageSmoothingEnabled = false;
+  mini.clearRect(0, 0, 128, 128);
+  mini.save();
+  if (flipX) { mini.translate(128, 0); mini.scale(-1, 1); }
+  mini.drawImage(off, 0, 0, 128, 128);
+  mini.restore();
+
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  tl.innerHTML = '';
+  const flipX = document.getElementById('chkFlip').checked;
+  frames.forEach((fr, idx) => {
+    const div = document.createElement('div');
+    div.className = 'thumb' + (idx === curIdx ? ' cur' : '');
+    const c = document.createElement('canvas'); c.width = 64; c.height = 64;
+    const g = c.getContext('2d');
+    const off = document.createElement('canvas'); off.width = 64; off.height = 64;
+    off.getContext('2d').putImageData(renderRigFrame64(side, fr, true), 0, 0);
+    if (flipX) { g.translate(64, 0); g.scale(-1, 1); }
+    g.drawImage(off, 0, 0);
+    div.appendChild(c);
+    const sp = document.createElement('span'); sp.textContent = 'f' + idx;
+    div.appendChild(sp);
+    div.onclick = () => { curIdx = idx; syncUI(); render(); };
+    tl.appendChild(div);
+  });
+  const btns = document.createElement('div');
+  btns.style.display = 'flex'; btns.style.flexDirection = 'column'; btns.style.gap = '4px';
+  btns.innerHTML = `<button onclick="dupFrame()">+ 복제</button><button onclick="delFrame()">🗑 삭제</button>`;
+  tl.appendChild(btns);
+}
+
+function syncUI() {
+  const f = frames[curIdx];
+  for (const k of ['bx','by','hy','ra','la','rla','lla','sa']) {
+    document.getElementById('s_' + k).value = f[k];
+    document.getElementById('v_' + k).textContent = f[k];
+  }
+  document.getElementById('s_rx').value = f.rx; document.getElementById('s_ry').value = f.ry;
+  document.getElementById('v_rxy').textContent = `${f.rx},${f.ry}`;
+  document.getElementById('s_lx').value = f.lx; document.getElementById('s_ly').value = f.ly;
+  document.getElementById('v_lxy').textContent = `${f.lx},${f.ly}`;
+  document.getElementById('s_rly').value = f.rly; document.getElementById('s_lly').value = f.lly;
+  document.getElementById('c_rBehind').checked = !!f.rBehind;
+  document.getElementById('c_rOverHead').checked = !!f.rOverHead;
+  document.getElementById('c_lBehind').checked = !!f.lBehind;
+  document.getElementById('c_sword').checked = !!f.sword;
+  document.getElementById('c_sBehind').checked = !!f.sBehind;
+}
+
+function setF(k, v) { frames[curIdx][k] = v; syncUI(); render(); }
+function setSide(s) { side = s; renderPartList(); loadPreset('idle'); }
+function dupFrame() { frames.splice(curIdx+1, 0, JSON.parse(JSON.stringify(frames[curIdx]))); curIdx++; syncUI(); render(); }
+function delFrame() { if (frames.length <= 1) return; frames.splice(curIdx, 1); curIdx = Math.max(0, curIdx-1); syncUI(); render(); }
+
+function loadPreset(name) {
+  const d = defaultFrame;
+  const sgn = (side === 'front') ? 1 : -1;
+  if (name === 'idle') {
+    frames = [d(), { ...d(), by: 1, rly: -1, lly: -1 }];
+  } else if (name === 'walk') {
+    frames = [
+      { ...d(), by: 1, ra:  20*sgn, la: -20*sgn, rBehind: side==='back', lBehind: side==='front', rla:  15*sgn, lla: -15*sgn },
+      { ...d(), by: 0, ra:   0,     la:   0,     rla:  -5*sgn, lla:   5*sgn, rly: -1 },
+      { ...d(), by: 1, ra: -20*sgn, la:  20*sgn, rBehind: side==='front', lBehind: side==='back', rla: -15*sgn, lla:  15*sgn },
+      { ...d(), by: 0, ra:   0,     la:   0,     rla:   5*sgn, lla:  -5*sgn, lly: -1 },
+    ];
+  } else if (name === 'slash1') {
+    frames = [
+      { ...d(), ra: 135*sgn, la: -30*sgn, rOverHead: side==='front', sword: true, sa: side==='front'?-120:-50 },
+      { ...d(), bx: -1*sgn, by: 1, ra:  25*sgn, la: -55*sgn, rBehind: side==='back', sBehind: side==='back', rla: 10*sgn, lla: -10*sgn, sword: true, sa: side==='front'?125:155 },
+      { ...d(), bx: -1*sgn, by: 1, ra: -45*sgn, la: -70*sgn, rBehind: side==='back', sBehind: side==='back', rla: 10*sgn, lla: -10*sgn, sword: true, sa: side==='front'?60:140 },
+      { ...d(), by: 0, ra: -30*sgn, la: -40*sgn, rBehind: side==='back', sBehind: side==='back', rla: 5*sgn, lla: -5*sgn, sword: true, sa: side==='front'?70:135 },
+    ];
+  } else if (name === 'slash2') {
+    frames = [
+      { ...d(), ra: -95*sgn, la: -25*sgn, rBehind: side==='back', sBehind: side==='back', sword: true, sa: side==='front'?-45:-145 },
+      { ...d(), bx: -1*sgn, by: 1, ra: 85*sgn, la: -65*sgn, rla: 10*sgn, lla: -10*sgn, sword: true, sa: side==='front'?172:30 },
+      { ...d(), bx: -1*sgn, by: 1, ra: 45*sgn, la: -50*sgn, rla: 10*sgn, lla: -10*sgn, sword: true, sa: side==='front'?138:45 },
+      { ...d(), by: 0, ra: 25*sgn, la: -25*sgn, rla: 5*sgn, lla: -5*sgn, sword: true, sa: side==='front'?130:55 },
+    ];
+  }
+  curIdx = 0; syncUI(); render();
+}
+
+function renderPartList() {
+  const labels = [['head','머리'],['torso','몸통'],['rArm','오른팔'],['lArm','왼팔'],['rLeg','오른다리'],['lLeg','왼다리']];
+  const box = document.getElementById('partList');
+  box.innerHTML = '';
+  for (const [k, lb] of labels) {
+    const row = document.createElement('div');
+    row.className = 'part-row';
+    row.innerHTML = `<span>${side==='front'?'앞':'뒤'} / <b>${lb}</b></span>
+      <button style="padding:2px 6px;font-size:11px;" onclick="triggerReplace('${k}')">📥 교체</button>`;
+    box.appendChild(row);
+  }
+}
+function triggerReplace(k) { pendingReplacePart = k; document.getElementById('partFileIn').click(); }
+function onPartFileChosen(input) {
+  const file = input.files[0]; if (!file || !pendingReplacePart) return;
+  const k = pendingReplacePart;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const id = await loadImageData(reader.result, 64, 64);
+    if (k !== 'head' && document.getElementById('chkAutoStrip').checked) {
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i+3] > 128 && d[i] === OUT_RGB[0] && d[i+1] === OUT_RGB[1] && d[i+2] === OUT_RGB[2]) {
+          d[i+3] = 0;
+        }
+      }
+    }
+    PARTS[side][k] = id;
+    render();
+    toast(`파츠 교체 완료: ${side}/${k}!`);
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// Post-process dot painting
+function setMode(m) {
+  curMode = m;
+  ['view','pen','era','pick'].forEach(id => document.getElementById('m_'+id).classList.remove('active'));
+  const map = { view:'m_view', pen:'m_pen', eraser:'m_era', picker:'m_pick' };
+  document.getElementById(map[m]).classList.add('active');
+  document.getElementById('mainCv').style.cursor = (m === 'view') ? 'default' : 'crosshair';
+  render();
+}
+function initPalette() {
+  const p = document.getElementById('palette'); p.innerHTML = '';
+  for (const hex of PALETTE) {
+    const d = document.createElement('div');
+    d.className = 'sw' + (hex === curColor ? ' sel' : '');
+    d.style.background = hex; d.title = hex;
+    d.onclick = () => {
+      curColor = hex;
+      document.querySelectorAll('.sw').forEach(x => x.classList.remove('sel'));
+      d.classList.add('sel');
+      setMode('pen');
+    };
+    p.appendChild(d);
+  }
+}
+const mc = document.getElementById('mainCv');
+let drawing = false;
+function applyPaint(e, start) {
+  if (curMode === 'view' || playing) return;
+  const r = mc.getBoundingClientRect();
+  let x = Math.floor(((e.clientX - r.left) / r.width) * 64);
+  const y = Math.floor(((e.clientY - r.top) / r.height) * 64);
+  if (document.getElementById('chkFlip').checked) x = 63 - x;
+  if (x < 0 || x >= 64 || y < 0 || y >= 64) return;
+  const f = frames[curIdx];
+  if (curMode === 'picker') {
+    const img = renderRigFrame64(side, f, true).data;
+    const i = (y * 64 + x) * 4;
+    if (img[i+3] > 0) {
+      curColor = '#' + [img[i],img[i+1],img[i+2]].map(v => v.toString(16).padStart(2,'0')).join('');
+      setMode('pen'); toast('색 추출: ' + curColor);
+    }
+    return;
+  }
+  if (start) {
+    UNDO_POST.push({ idx: curIdx, snap: JSON.stringify(f.post || {}) });
+    if (UNDO_POST.length > 40) UNDO_POST.shift();
+  }
+  if (!f.post) f.post = {};
+  f.post[`${x},${y}`] = (curMode === 'pen') ? curColor : null;
+  render();
+}
+mc.addEventListener('pointerdown', e => { drawing = true; mc.setPointerCapture(e.pointerId); applyPaint(e, true); });
+mc.addEventListener('pointermove', e => { if (drawing) applyPaint(e, false); });
+window.addEventListener('pointerup', () => { drawing = false; });
+function undoPost() {
+  if (!UNDO_POST.length) return;
+  const u = UNDO_POST.pop();
+  if (frames[u.idx]) frames[u.idx].post = JSON.parse(u.snap);
+  render();
+}
+function clearPost() { frames[curIdx].post = {}; render(); toast('현재 프레임 후처리 초기화됨'); }
+
+function togglePlay() {
+  playing = !playing;
+  document.getElementById('btnPlay').textContent = playing ? '⏹ 정지' : '▶ 재생';
+  clearInterval(playTimer);
+  if (playing) {
+    playTimer = setInterval(() => { curIdx = (curIdx + 1) % frames.length; syncUI(); render(); }, 140);
+  }
+}
+function exportSheet(withSword) {
+  const c = document.createElement('canvas'); c.width = 64 * frames.length; c.height = 64;
+  const g = c.getContext('2d');
+  frames.forEach((fr, i) => {
+    const off = document.createElement('canvas'); off.width = 64; off.height = 64;
+    off.getContext('2d').putImageData(renderRigFrame64(side, fr, withSword), 0, 0);
+    g.drawImage(off, i * 64, 0);
+  });
+  const a = document.createElement('a');
+  a.href = c.toDataURL(); a.download = `rig_v3_${side}${withSword?'_sword':''}.png`; a.click();
+}
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.ctrlKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undoPost(); }
+  else if (e.key.toLowerCase() === 'b') setMode('pen');
+  else if (e.key.toLowerCase() === 'e') setMode('eraser');
+  else if (e.key.toLowerCase() === 'i') setMode('picker');
+  else if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+});
+
+initParts().then(() => {
+  initPalette();
+  renderPartList();
+  loadPreset('slash1');
+});
+</script>
+</body>
+</html>
